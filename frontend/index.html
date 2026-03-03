@@ -318,6 +318,8 @@
 
         #asset-move-panel { border:1px solid #334155; background:#0b1220; border-radius:10px; padding:10px; margin-bottom:10px; }
         #asset-home-actions-panel { border:1px solid #334155; background:#0b1220; border-radius:10px; padding:10px; }
+        #asset-home-actions-panel .asset-toolbar { display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+        #asset-home-actions-panel .asset-toolbar > button { width:100%; margin:0; }
         #asset-move-row { justify-content: center; gap:12px; margin-bottom:0; }
         #asset-move-row .btn-move,
         #asset-move-row .btn-home,
@@ -1103,7 +1105,7 @@
 
                 <div id="asset-home-actions-panel" class="asset-preview-box" style="margin-bottom:10px;">
                     <div class="asset-toolbar" style="margin-bottom:6px; gap:8px;">
-                        <button id="btn-back-last-bg" class="btn-home" onclick="restoreLastGeneratedBackground()">↩️ 回上一次</button>
+                        <button id="btn-back-last-bg" class="btn-home" onclick="restoreLastGeneratedBackground()">↩️ 回上一个家</button>
                         <button id="btn-favorite-home" class="btn-home" onclick="saveCurrentHomeFavorite()">⭐ 收藏这个家</button>
                     </div>
                     <div id="asset-home-favorites" class="asset-preview-box" style="margin:0;">
@@ -1162,7 +1164,7 @@
                 hideDrawer: '👁 隐藏侧边栏', showDrawer: '👁 显示侧边栏',
                 assetHide: '隐藏', assetShow: '显示',
                 resetToDefault: '重置为默认资产', restorePrevAsset: '用上一版',
-                btnMove: '📦 搬新家', btnHome: '🐚 回老家', btnHomeLast: '↩️ 回上一次', btnHomeFavorite: '⭐ 收藏这个家', btnBroker: '🤝 找中介', btnDIY: '🪚 自己装', btnBrokerGo: '听中介的',
+                btnMove: '📦 搬新家', btnHome: '🐚 回老家', btnHomeLast: '↩️ 回上一个家', btnHomeFavorite: '⭐ 收藏这个家', btnBroker: '🤝 找中介', btnDIY: '🪚 自己装', btnBrokerGo: '听中介的',
                 homeFavTitle: '🏠 收藏的家', homeFavEmpty: '还没有收藏，先点“⭐ 收藏这个家”', homeFavApply: '替换到当前地图', homeFavSaved: '✅ 已收藏当前地图', homeFavApplied: '✅ 已替换为收藏地图',
                 brokerHint: '你会给龙虾推荐什么样的房子',
                 brokerPromptPh: '例如：故宫主题、莫奈风格、地牢主题、兵马俑主题……',
