@@ -7,6 +7,7 @@ const APP_NAME = "Star Desktop Pet";
 
 let mainWindow = null;
 let miniWindow = null;
+let assetWindow = null;
 let tray = null;
 let backendChild = null;
 let isQuitting = false;
@@ -42,6 +43,7 @@ async function waitBackendReady(timeoutMs = 20000) {
   }
   return false;
 }
+
 
 function findProjectRoot() {
   if (process.env.STAR_PROJECT_ROOT) {
@@ -190,6 +192,11 @@ function emitMini(event, payload) {
   miniWindow.webContents.send("tauri:event", { event, payload });
 }
 
+function emitMain(event, payload) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send("tauri:event", { event, payload });
+}
+
 async function enterMiniMode(projectRoot) {
   const snapshot = await readStateWithFallback(projectRoot).catch(() => null);
   if (snapshot) emitMini("mini-sync-state", { ...snapshot, ui_lang: currentUiLang });
@@ -210,6 +217,61 @@ async function enterMiniMode(projectRoot) {
 async function openFrontendAndQuit() {
   await shell.openExternal("http://127.0.0.1:18791/");
   app.quit();
+}
+
+function createAssetWindow(projectRoot) {
+  if (assetWindow && !assetWindow.isDestroyed()) {
+    assetWindow.show();
+    assetWindow.focus();
+    assetWindow.moveTop();
+    return assetWindow;
+  }
+
+  const preloadPath = path.join(__dirname, "preload.js");
+  const appIconPath = resolveAppIconPath(projectRoot);
+  const mainBounds = mainWindow && !mainWindow.isDestroyed() ? mainWindow.getBounds() : null;
+  const x = mainBounds ? mainBounds.x + 32 : 160;
+  const y = mainBounds ? mainBounds.y + 32 : 120;
+  const assetUrl = "http://127.0.0.1:18791/electron-standalone?desktop=1&assetWindow=1";
+
+  assetWindow = new BrowserWindow({
+    width: 300,
+    height: 580,
+    minWidth: 300,
+    maxWidth: 300,
+    minHeight: 580,
+    x,
+    y,
+    title: "Star Decorate Room",
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    alwaysOnTop: true,
+    resizable: true,
+    maximizable: true,
+    fullscreenable: false,
+    backgroundColor: "#00000000",
+    icon: appIconPath || undefined,
+    show: false,
+    webPreferences: {
+      preload: preloadPath,
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  assetWindow.once("ready-to-show", () => {
+    if (!assetWindow || assetWindow.isDestroyed()) return;
+    assetWindow.setAlwaysOnTop(true, "floating");
+    assetWindow.moveTop();
+    assetWindow.show();
+    assetWindow.focus();
+  });
+  assetWindow.on("closed", () => {
+    assetWindow = null;
+  });
+  assetWindow.loadURL(assetUrl);
+  return assetWindow;
 }
 
 function createWindows(projectRoot) {
@@ -257,7 +319,8 @@ function createWindows(projectRoot) {
   });
   miniWindow.setTitle("Star Mini");
 
-  const mainUrl = "http://127.0.0.1:18791/static/electron-standalone.html?desktop=1";
+  const v = Date.now();
+  const mainUrl = `http://127.0.0.1:18791/electron-standalone?desktop=1&v=${v}`;
   mainWindow.loadURL(mainUrl);
   miniWindow.loadFile(path.join(projectRoot, "desktop-pet", "src", "minimized.html"));
 }
@@ -364,8 +427,40 @@ function registerIpc(projectRoot) {
     }
 
     if (cmd === "set_main_window_mode") {
+      const senderWin = BrowserWindow.fromWebContents(_event.sender);
+      // Only main window is allowed to control main window height.
+      if (!senderWin || !mainWindow || senderWin.id !== mainWindow.id) {
+        return null;
+      }
       const expanded = !!(args && args.expanded);
       applyMainWindowMode(expanded);
+      return null;
+    }
+
+    if (cmd === "open_asset_window") {
+      createAssetWindow(projectRoot);
+      return null;
+    }
+
+    if (cmd === "close_asset_window") {
+      if (assetWindow && !assetWindow.isDestroyed()) {
+        assetWindow.close();
+      }
+      return null;
+    }
+
+    if (cmd === "notify_main_window_asset_refresh") {
+      const payloadData = {
+        ...(args && typeof args === "object" ? args : {}),
+      };
+      const kind = String(payloadData.kind ? payloadData.kind : "asset");
+      const path = String(payloadData.path ? payloadData.path : "");
+      emitMain("main-window-asset-refresh", {
+        ...payloadData,
+        kind,
+        path,
+        at: Date.now(),
+      });
       return null;
     }
 

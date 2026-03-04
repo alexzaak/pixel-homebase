@@ -1626,6 +1626,7 @@
                     if (msg) msg.textContent = '✅ 验证通过';
                     updateAssetAuthUI();
                     await refreshAssetDrawerList();
+                    await renderHomeFavorites(false);
                     bindDrawerFileMeta();
                 } else {
                     assetDrawerAuthed = false;
@@ -2340,7 +2341,7 @@
             const out = document.getElementById('asset-upload-result');
             try {
                 const selectedPath = (selectedAssetInfo && selectedAssetInfo.path) ? selectedAssetInfo.path : '';
-                const res = await fetch('/assets/list');
+                const res = await fetch('/assets/list?t=' + Date.now(), { cache: 'no-store' });
                 const data = await res.json();
                 assetListData = data.items || [];
 

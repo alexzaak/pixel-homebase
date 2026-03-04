@@ -24,6 +24,59 @@
             gap: 10px;
             overflow-x: hidden;
         }
+        body.asset-window-mode {
+            background: transparent !important;
+            padding: 0 !important;
+            gap: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: hidden !important;
+        }
+        body.asset-window-mode #window-controls,
+        body.asset-window-mode #status-fab,
+        body.asset-window-mode #loading-overlay,
+        body.asset-window-mode #main-stage,
+        body.asset-window-mode #bottom-panels,
+        body.asset-window-mode #asset-highlight,
+        body.asset-window-mode #room-loading-overlay,
+        body.asset-window-mode #coords-overlay,
+        body.asset-window-mode #coords-toggle,
+        body.asset-window-mode #pan-toggle,
+        body.asset-window-mode #lang-toggle-group {
+            display: none !important;
+        }
+        body.asset-window-mode #asset-drawer-backdrop {
+            display: none !important;
+        }
+        body.asset-window-mode #asset-drawer {
+            position: fixed !important;
+            inset: 0 !important;
+            width: auto !important;
+            height: 100vh !important;
+            max-width: none !important;
+            border-radius: 10px !important;
+            border: 0 !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.45) !important;
+            background: rgba(17, 24, 39, 0.96) !important;
+            transform: none !important;
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        body.asset-window-mode #asset-drawer-body {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            padding-bottom: 10px !important;
+        }
+        body.asset-window-mode #asset-drawer-header {
+            cursor: move !important;
+        }
+        button {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
         /* Electron standalone overrides: replicate desktop-shell styles from pre-upstream version */
         body.desktop-shell {
             background: transparent !important;
@@ -345,7 +398,7 @@
             box-shadow: 0 0 0 1px rgba(246, 208, 6, 0.45) inset;
         }
         body.desktop-shell #asset-drawer {
-            box-shadow: none !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
         }
         /* 底部面板容器 */
         #main-stage {
@@ -355,8 +408,7 @@
             will-change: margin-left;
         }
         body.drawer-open #main-stage {
-            /* 右侧紧贴侧边栏左缘，避免出现大空隙 */
-            margin-left: max(0px, calc(100vw - min(420px, 92vw) - 1280px));
+            margin-left: 0 !important;
         }
         #bottom-panels {
             display: flex;
@@ -565,21 +617,29 @@
 
         #asset-drawer {
             position: fixed;
-            top: 0;
-            right: 0;
-            width: 320px;
-            max-width: 92vw;
-            height: 100vh;
+            top: 84px;
+            left: 50%;
+            right: auto;
+            width: 420px;
+            max-width: none;
+            height: 760px;
             background: #111827;
-            border-left: 2px solid #22c55e;
-            box-shadow: -8px 0 24px rgba(0,0,0,0.45);
-            transform: translateX(100%);
-            transition: transform 0.25s ease;
+            border: 2px solid #22c55e;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+            transform: translateX(-50%);
+            transition: opacity 0.18s ease;
             z-index: 1000010;
-            display: flex;
+            display: none;
             flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
         }
-        #asset-drawer.open { transform: translateX(0); }
+        #asset-drawer.open {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
         #asset-drawer-header {
             color: #ecfdf5;
             font-size: 15px;
@@ -589,6 +649,10 @@
             justify-content: space-between;
             align-items: center;
             background: #0b1220;
+            cursor: move;
+            user-select: none;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
         }
         #asset-drawer-body {
             padding: 10px;
@@ -597,6 +661,16 @@
             color: #e5e7eb;
             font-size: 12px;
             position: relative;
+        }
+        #asset-drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 1000009;
+            display: none;
+        }
+        #asset-drawer-backdrop.open {
+            display: block;
         }
         .asset-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
         .asset-toolbar input { flex:1; min-width: 150px; padding:6px 8px; border-radius:6px; border:1px solid #374151; background:#1f2937; color:#fff; }
@@ -1483,6 +1557,7 @@
             #asset-drawer {
                 width: 92vw;
                 max-width: 92vw;
+                max-height: 84vh;
             }
             #asset-drawer-body { padding: 8px; }
             #asset-list {
@@ -1563,7 +1638,7 @@
                 <button id="btn-state-writing" onclick="setState('writing', getStateDetailByState('writing'))">工作</button>
                 <button id="btn-state-syncing" onclick="setState('syncing', getStateDetailByState('syncing'))">同步</button>
                 <button id="btn-state-error" onclick="setState('error', getStateDetailByState('error'))">报警</button>
-                <button id="btn-open-drawer" onclick="toggleAssetDrawer()">装修房间</button>
+                <button id="btn-open-drawer" onclick="openAssetWindowFromMain()">装修房间</button>
             </div>
         </div>
 
@@ -1585,8 +1660,9 @@
         </div>
     </div>
 
-    <aside id="asset-drawer">
-        <div id="asset-drawer-header">
+    <div id="asset-drawer-backdrop" onclick="toggleAssetDrawer(false)"></div>
+    <aside id="asset-drawer" data-no-window-drag="1">
+        <div id="asset-drawer-header" data-no-window-drag="1">
             <span>装修房间 · 资产侧边栏</span>
             <button id="btn-close-drawer" onclick="toggleAssetDrawer(false)">关闭</button>
         </div>
@@ -2032,13 +2108,28 @@
             });
         }
 
+        const PAGE_PARAMS = new URLSearchParams(window.location.search);
         const ELECTRON_MODE = !!window.__ELECTRON__;
-        const DESKTOP_MODE = !!window.__TAURI__ || new URLSearchParams(window.location.search).get('desktop') === '1';
+        const DESKTOP_MODE = !!window.__TAURI__ || PAGE_PARAMS.get('desktop') === '1';
+        const ASSET_WINDOW_MODE = PAGE_PARAMS.get('assetWindow') === '1';
         if (DESKTOP_MODE) {
             document.body.classList.add('desktop-shell');
         }
+        if (ASSET_WINDOW_MODE) {
+            document.body.classList.add('asset-window-mode');
+            const drawer = document.getElementById('asset-drawer');
+            const drawerHeader = document.getElementById('asset-drawer-header');
+            if (drawer) drawer.removeAttribute('data-no-window-drag');
+            if (drawerHeader) drawerHeader.removeAttribute('data-no-window-drag');
+        }
         if (ELECTRON_MODE) {
             document.body.classList.add('electron-shell');
+            if (!ASSET_WINDOW_MODE) {
+                const drawer = document.getElementById('asset-drawer');
+                const backdrop = document.getElementById('asset-drawer-backdrop');
+                if (drawer) drawer.style.display = 'none';
+                if (backdrop) backdrop.style.display = 'none';
+            }
         }
 
         function initDesktopWindowDrag() {
@@ -2113,7 +2204,6 @@
                         const url = new URL('/', window.location.origin).toString();
                         if (core && core.invoke) {
                             await core.invoke('open_external_url', { url });
-                            await core.invoke('close_app');
                         } else {
                             window.open(url.toString(), '_blank', 'noopener,noreferrer');
                         }
@@ -2124,6 +2214,44 @@
             }
         }
         initWindowControls();
+
+        function initMainWindowAssetRefreshSync() {
+            if (ASSET_WINDOW_MODE) return;
+            if (!ELECTRON_MODE || !window.__TAURI__ || !window.__TAURI__.event) return;
+            window.__TAURI__.event.listen('main-window-asset-refresh', async (evt) => {
+                const payload = (evt && evt.payload) ? evt.payload : {};
+                const kind = String(payload.kind || 'asset');
+                const path = String(payload.path || '');
+                try {
+                    if (kind === 'asset_action') {
+                        const action = String(payload.action || '');
+                        if (action === 'preview_asset' && path) {
+                            applyScenePreview(path);
+                        } else if (action === 'clear_preview') {
+                            clearAssetSelectionUI();
+                        } else if (action === 'set_visibility' && path) {
+                            const visible = !!payload.visible;
+                            setAssetVisible(path, visible);
+                            if (selectedAssetInfo && selectedAssetInfo.path === path) {
+                                if (visible) applyScenePreview(path);
+                                else clearAssetSelectionUI();
+                            }
+                        }
+                    } else if (kind === 'office_bg') {
+                        await refreshOfficeBackgroundOnly();
+                    } else if (path) {
+                        await refreshSceneObjectByAssetPath(path);
+                    } else {
+                        await refreshOfficeBackgroundOnly();
+                    }
+                    if (assetDrawerOpen && assetDrawerAuthed) {
+                        await refreshAssetDrawerList();
+                        await renderHomeFavorites(false);
+                    }
+                } catch (_) {}
+            });
+        }
+        initMainWindowAssetRefreshSync();
 
         function refreshCollapsiblePanelTitles() {
             const defs = [
@@ -2165,6 +2293,8 @@
                 };
 
                 const syncElectronWindowMode = async () => {
+                    // asset window must NEVER resize main window.
+                    if (ASSET_WINDOW_MODE) return;
                     if (!ELECTRON_MODE || !window.__TAURI__ || !window.__TAURI__.core) return;
                     const expanded = !!document.querySelector('.panel-collapsible:not(.collapsed)');
                     try {
@@ -2453,6 +2583,7 @@
                     if (msg) msg.textContent = `✅ ${t('authPassOk')}`;
                     updateAssetAuthUI();
                     await refreshAssetDrawerList();
+                    await renderHomeFavorites(false);
                     bindDrawerFileMeta();
                 } else {
                     assetDrawerAuthed = false;
@@ -2900,6 +3031,7 @@
             selectedAssetInfo = null;
             updateActiveAssetItem('');
             clearAssetSelectionUI();
+            if (ASSET_WINDOW_MODE) notifyMainWindowAssetAction('clear_preview');
             const out = document.getElementById('asset-upload-result');
             if (out) out.textContent = '';
 
@@ -2942,6 +3074,7 @@
             selectedAssetInfo = assetListData.find(x => x.path === path) || null;
             updateActiveAssetItem(path);
             const ok = applyScenePreview(path);
+            if (ASSET_WINDOW_MODE) notifyMainWindowAssetAction('preview_asset', path);
             renderSelectedAssetGuidance(path, ok);
             updateAssetConfirmButtonState();
         }
@@ -3080,6 +3213,7 @@
             if (!p) return;
             const nextVisible = isAssetHidden(p);
             setAssetVisible(p, nextVisible);
+            if (ASSET_WINDOW_MODE) notifyMainWindowAssetAction('set_visibility', p, { visible: !!nextVisible });
             renderAssetDrawerList();
             const out = document.getElementById('asset-upload-result');
             if (out) out.textContent = nextVisible ? `✅ ${t('assetShow')}：${p}` : `🙈 ${t('assetHide')}：${p}`;
@@ -3167,7 +3301,7 @@
             const out = document.getElementById('asset-upload-result');
             try {
                 const selectedPath = (selectedAssetInfo && selectedAssetInfo.path) ? selectedAssetInfo.path : '';
-                const res = await fetch('/assets/list');
+                const res = await fetch('/assets/list?t=' + Date.now(), { cache: 'no-store' });
                 const data = await res.json();
                 assetListData = data.items || [];
 
@@ -3244,6 +3378,74 @@
                 if (keep) return;
                 clearAssetSelection(true);
             });
+        }
+
+        let assetDrawerDragInited = false;
+        function initAssetDrawerFloatingWindow() {
+            if (assetDrawerDragInited) return;
+            if (ASSET_WINDOW_MODE) return;
+            const drawer = document.getElementById('asset-drawer');
+            const header = document.getElementById('asset-drawer-header');
+            if (!drawer || !header) return;
+            assetDrawerDragInited = true;
+
+            const centerDrawer = () => {
+                const left = (window.innerWidth - drawer.offsetWidth) / 2;
+                const top = Math.max(14, (window.innerHeight - drawer.offsetHeight) / 2);
+                drawer.style.left = `${left}px`;
+                drawer.style.top = `${top}px`;
+                drawer.style.transform = 'none';
+            };
+
+            let dragging = false;
+            let startX = 0;
+            let startY = 0;
+            let startLeft = 0;
+            let startTop = 0;
+
+            header.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                if (e.target && e.target.closest('button, input, textarea, select, a, [contenteditable]')) return;
+                dragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = parseFloat(drawer.style.left) || drawer.getBoundingClientRect().left;
+                startTop = parseFloat(drawer.style.top) || drawer.getBoundingClientRect().top;
+                if (typeof header.setPointerCapture === 'function') {
+                    try { header.setPointerCapture(e.pointerId); } catch (_) {}
+                }
+                e.preventDefault();
+            });
+
+            header.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                drawer.style.left = `${startLeft + dx}px`;
+                drawer.style.top = `${startTop + dy}px`;
+                drawer.style.transform = 'none';
+            });
+
+            const endDrag = (e) => {
+                if (!dragging) return;
+                dragging = false;
+                if (e && typeof header.releasePointerCapture === 'function') {
+                    try { header.releasePointerCapture(e.pointerId); } catch (_) {}
+                }
+            };
+            header.addEventListener('pointerup', endDrag);
+            header.addEventListener('pointercancel', endDrag);
+
+            window.addEventListener('resize', () => {
+                if (!assetDrawerOpen) return;
+                const left = parseFloat(drawer.style.left) || drawer.getBoundingClientRect().left;
+                const top = parseFloat(drawer.style.top) || drawer.getBoundingClientRect().top;
+                drawer.style.left = `${left}px`;
+                drawer.style.top = `${top}px`;
+                drawer.style.transform = 'none';
+            });
+
+            centerDrawer();
         }
 
         function openInlineAssetUploader() {
@@ -3356,6 +3558,7 @@
             const out = document.getElementById('asset-upload-result');
             const fi = document.getElementById('asset-upload-file');
             const hasFile = !!(fi && fi.files && fi.files.length > 0);
+            const path = (selectedAssetInfo && selectedAssetInfo.path) ? selectedAssetInfo.path : '';
 
             const okUpload = await commitAssetUpdate();
             if (!okUpload) return;
@@ -3369,6 +3572,9 @@
             assetDrawerOpen = false;
             const drawer = document.getElementById('asset-drawer');
             if (drawer) drawer.classList.remove('open');
+            const backdrop = document.getElementById('asset-drawer-backdrop');
+            if (backdrop) backdrop.classList.remove('open');
+            if (path) await notifyMainWindowAssetRefresh('asset_path', path);
 
             setTimeout(() => window.location.reload(), 400);
         }
@@ -3513,6 +3719,23 @@ function toggleBrokerPanel() {
         async function refreshOfficeBackgroundOnly() {
             return await refreshSceneObjectByAssetPath('office_bg_small.webp');
         }
+        async function notifyMainWindowAssetRefresh(kind, path = '') {
+            if (!ASSET_WINDOW_MODE || !ELECTRON_MODE || !window.__TAURI__ || !window.__TAURI__.core) return;
+            try {
+                await window.__TAURI__.core.invoke('notify_main_window_asset_refresh', { kind, path });
+            } catch (_) {}
+        }
+        async function notifyMainWindowAssetAction(action, path = '', extra = {}) {
+            if (!ASSET_WINDOW_MODE || !ELECTRON_MODE || !window.__TAURI__ || !window.__TAURI__.core) return;
+            try {
+                await window.__TAURI__.core.invoke('notify_main_window_asset_refresh', {
+                    kind: 'asset_action',
+                    action,
+                    path,
+                    ...extra
+                });
+            } catch (_) {}
+        }
 
         function markMoveSuccess(outEl, btnEl = null) {
             if (outEl) outEl.textContent = t('moveSuccess');
@@ -3630,6 +3853,7 @@ function toggleBrokerPanel() {
                 }
                 out.textContent = t('brokerDone');
                 const ok = await refreshOfficeBackgroundOnly();
+                await notifyMainWindowAssetRefresh('office_bg', 'office_bg_small.webp');
                 if (ok) {
                     markMoveSuccess(out, brokerBtn);
                 } else {
@@ -3675,6 +3899,7 @@ function toggleBrokerPanel() {
                 }
                 out.textContent = '✅ 已生成并替换底图，正在刷新房间...';
                 const ok = await refreshOfficeBackgroundOnly();
+                await notifyMainWindowAssetRefresh('office_bg', 'office_bg_small.webp');
                 if (ok) {
                     markMoveSuccess(out, moveBtn);
                 } else {
@@ -3711,6 +3936,7 @@ function toggleBrokerPanel() {
                 }
                 out.textContent = '✅ 已恢复初始底图';
                 const ok = await refreshOfficeBackgroundOnly();
+                await notifyMainWindowAssetRefresh('office_bg', 'office_bg_small.webp');
                 if (ok) {
                     markMoveSuccess(out, homeBtn);
                 } else {
@@ -3745,6 +3971,7 @@ function toggleBrokerPanel() {
                     return;
                 }
                 const ok = await refreshOfficeBackgroundOnly();
+                await notifyMainWindowAssetRefresh('office_bg', 'office_bg_small.webp');
                 if (ok) {
                     out.textContent = '✅ 已回退到上一次背景';
                 } else {
@@ -3838,6 +4065,7 @@ function toggleBrokerPanel() {
                     return;
                 }
                 const ok = await refreshOfficeBackgroundOnly();
+                await notifyMainWindowAssetRefresh('office_bg', 'office_bg_small.webp');
                 out.textContent = ok ? t('homeFavApplied') : `${t('homeFavApplied')}（局部刷新失败，可手动刷新页面）`;
                 try { setState('idle', '已应用收藏地图'); } catch (e) {}
             } catch (e) {
@@ -3867,6 +4095,7 @@ function toggleBrokerPanel() {
                     return;
                 }
                 await refreshSceneObjectByAssetPath(path);
+                await notifyMainWindowAssetRefresh('asset_path', path);
                 if (out) out.textContent = `✅ 已重置为默认资产：${path}`;
             } catch (e) {
                 if (out) out.textContent = `❌ 重置失败：${e}`;
@@ -3893,18 +4122,81 @@ function toggleBrokerPanel() {
                     return;
                 }
                 await refreshSceneObjectByAssetPath(path);
+                await notifyMainWindowAssetRefresh('asset_path', path);
                 if (out) out.textContent = `✅ 已回退到上一版：${path}`;
             } catch (e) {
                 if (out) out.textContent = `❌ 回退失败：${e}`;
             }
         }
 
+        async function openAssetWindowFromMain() {
+            if (ASSET_WINDOW_MODE) return;
+            if (!ELECTRON_MODE || !window.__TAURI__ || !window.__TAURI__.core) return;
+            try {
+                await window.__TAURI__.core.invoke('open_asset_window');
+            } catch (_) {
+                // ignore and allow retry
+            }
+        }
+
         async function toggleAssetDrawer(force) {
             const drawer = document.getElementById('asset-drawer');
+            const backdrop = document.getElementById('asset-drawer-backdrop');
+
+            if (!ASSET_WINDOW_MODE && ELECTRON_MODE) {
+                // Electron main window never toggles in-page drawer anymore.
+                // Keep state closed to avoid any open/close flicker, and always use dedicated asset window.
+                assetDrawerOpen = false;
+                if (drawer) drawer.classList.remove('open');
+                if (backdrop) backdrop.classList.remove('open');
+                document.body.classList.remove('drawer-open');
+
+                if (force === false) return;
+                try {
+                    if (window.__TAURI__ && window.__TAURI__.core) {
+                        await window.__TAURI__.core.invoke('open_asset_window');
+                    }
+                } catch (_) {}
+                return;
+            }
+
+            if (ASSET_WINDOW_MODE) {
+                if (force === false) {
+                    try {
+                        if (window.__TAURI__ && window.__TAURI__.core) {
+                            await window.__TAURI__.core.invoke('close_asset_window');
+                        } else {
+                            window.close();
+                        }
+                    } catch (_) {
+                        window.close();
+                    }
+                    return;
+                }
+
+                assetDrawerOpen = true;
+                if (drawer) drawer.classList.add('open');
+                if (backdrop) backdrop.classList.remove('open');
+                assetManualPanelOpen = false;
+                updateAssetAuthUI();
+                bindAssetDrawerBackgroundDeselect();
+                await ensureGeminiConfigLoaded();
+                if (assetDrawerAuthed) {
+                    await refreshAssetDrawerList();
+                    await renderHomeFavorites(false);
+                    bindDrawerFileMeta();
+                } else {
+                    const msg = document.getElementById('asset-auth-msg');
+                    if (msg) msg.textContent = t('authDefaultPassHint');
+                }
+                return;
+            }
+
             const next = (typeof force === 'boolean') ? force : !assetDrawerOpen;
             assetDrawerOpen = next;
             drawer.classList.toggle('open', next);
-            document.body.classList.toggle('drawer-open', next);
+            if (backdrop) backdrop.classList.toggle('open', next);
+            document.body.classList.remove('drawer-open');
 
             const openBtn = document.getElementById('btn-open-drawer');
             if (openBtn) {
@@ -3914,6 +4206,7 @@ function toggleBrokerPanel() {
             const closeBtn = document.getElementById('btn-close-drawer');
             if (closeBtn) closeBtn.textContent = t('drawerClose');
             if (next) {
+                initAssetDrawerFloatingWindow();
                 assetManualPanelOpen = false;
                 updateAssetAuthUI();
                 bindAssetDrawerBackgroundDeselect();
@@ -5452,8 +5745,14 @@ function toggleBrokerPanel() {
 
         // 假 Agent 气泡逻辑已移除，统一以真实 /agents 数据为准
 
-        // 启动游戏
-        initGame();
+        // 启动页面
+        if (ASSET_WINDOW_MODE) {
+            applyLanguage();
+            updateSpeedModeUI();
+            toggleAssetDrawer(true);
+        } else {
+            initGame();
+        }
     </script>
 </body>
 </html>
