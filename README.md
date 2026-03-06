@@ -79,6 +79,8 @@ python3 app.py
 
 打开 `http://127.0.0.1:18791`
 
+> ✅ 如果你是首次部署，可以先保留默认的开发配置；在生产环境中，请复制 `.env.example` 为 `.env` 并设置强随机的 `FLASK_SECRET_KEY` 与 `ASSET_DRAWER_PASS`，避免弱密码和会话泄露。
+
 ### 4) 切换状态
 
 ```bash
@@ -95,6 +97,16 @@ cloudflared tunnel --url http://127.0.0.1:18791
 ```
 
 拿到 `https://xxx.trycloudflare.com` 链接即可分享。
+
+### 6) 验证安装（可选）
+
+在后端运行中时，可以执行一次轻量级的 smoke test，确认核心接口是否正常工作：
+
+```bash
+python3 scripts/smoke_test.py --base-url http://127.0.0.1:18791
+```
+
+如果所有检查都显示 `OK`，说明后端路由和基础状态流转已经就绪。
 
 ---
 

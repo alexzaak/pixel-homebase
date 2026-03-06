@@ -79,6 +79,8 @@ python3 app.py
 
 Open `http://127.0.0.1:18791`
 
+> ✅ For local development you can start with the defaults; in production, copy `.env.example` to `.env` and set strong random values for `FLASK_SECRET_KEY` and `ASSET_DRAWER_PASS` to avoid weak passwords and session leaks.
+
 ### 4) Switch states
 
 ```bash
@@ -95,6 +97,16 @@ cloudflared tunnel --url http://127.0.0.1:18791
 ```
 
 Share the `https://xxx.trycloudflare.com` link with anyone.
+
+### 6) Verify your installation (optional)
+
+While the backend is running, you can run a lightweight smoke test to confirm that the core endpoints are healthy:
+
+```bash
+python3 scripts/smoke_test.py --base-url http://127.0.0.1:18791
+```
+
+If all checks report `OK`, your Star Office UI service is wired up correctly for basic status flows.
 
 ---
 

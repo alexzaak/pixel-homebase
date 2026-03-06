@@ -30,6 +30,8 @@ python3 app.py
 
 **http://127.0.0.1:18791** を開き、状態を切り替えてみましょう：
 
+> ✅ ローカル開発ではデフォルト設定のままで構いませんが、本番環境では `.env.example` を `.env` にコピーし、`FLASK_SECRET_KEY` と `ASSET_DRAWER_PASS` に十分な長さのランダム値を設定することをおすすめします（弱いパスワードやセッション漏洩を防ぐため）。
+
 ```bash
 python3 set_state.py writing "ドキュメント整理中"
 python3 set_state.py error "問題を検出、調査中"
@@ -39,6 +41,16 @@ python3 set_state.py idle "待機中"
 ![Star Office UI プレビュー](docs/screenshots/readme-cover-1.jpg)
 
 ---
+
+## ✅ インストール確認（任意）
+
+バックエンドが起動している状態で、簡単な smoke test を実行して主要エンドポイントが正常かどうかを確認できます：
+
+```bash
+python3 scripts/smoke_test.py --base-url http://127.0.0.1:18791
+```
+
+すべてのチェックが `OK` と表示されれば、Star Office UI の基本的なステータスフローが正しく動作していることを意味します。
 
 ## 📋 機能一覧
 
