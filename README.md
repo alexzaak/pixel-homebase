@@ -1,7 +1,5 @@
 # Star Office UI
 
-🌐 Language: **English** | [中文](./README.zh.md) | [日本語](./README.ja.md)
-
 ![Star Office UI Cover](docs/screenshots/readme-cover-2.jpg)
 
 **A pixel-art AI office dashboard** — Visualizes the working status of AI assistants in real-time, letting you intuitively see "who is doing what, what was done yesterday, and whether they are online now".
