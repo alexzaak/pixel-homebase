@@ -19,13 +19,13 @@ def get_yesterday_date_str() -> str:
 
 def sanitize_content(text: str) -> str:
     """Redact PII and sensitive patterns (OpenID, paths, IPs, email, phone) for safe display."""
-    text = re.sub(r'ou_[a-f0-9]+', '[用户]', text)
-    text = re.sub(r'user_id="[^"]+"', 'user_id="[隐藏]"', text)
-    text = re.sub(r'/root/[^"\s]+', '[路径]', text)
+    text = re.sub(r'ou_[a-f0-9]+', '[User]', text)
+    text = re.sub(r'user_id="[^"]+"', 'user_id="[Hidden]"', text)
+    text = re.sub(r'/root/[^"\s]+', '[Path]', text)
     text = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', '[IP]', text)
 
-    text = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[邮箱]', text)
-    text = re.sub(r'1[3-9]\d{9}', '[手机号]', text)
+    text = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[Email]', text)
+    text = re.sub(r'1[3-9]\d{9}', '[Phone]', text)
 
     return text
 
@@ -36,10 +36,10 @@ def extract_memo_from_file(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # 提取真实内容，不做过度包装
+        # Extract real content without over-wrapping
         lines = content.strip().split("\n")
 
-        # 提取核心要点
+        # Extract core points
         core_points = []
         for line in lines:
             line = line.strip()
@@ -53,43 +53,43 @@ def extract_memo_from_file(file_path: str) -> str:
                 core_points.append(line)
 
         if not core_points:
-            return "「昨日无事记录」\n\n若有恒，何必三更眠五更起；最无益，莫过一日曝十日寒。"
+            return "「No record for yesterday」\n\nIf you have perseverance, why sleep at midnight and wake up at dawn; the most useless thing is to work hard for one day and rest for ten."
 
-        # 从核心内容中提取 2-3 个关键点
+        # Extract 2-3 key points from the core content
         selected_points = core_points[:3]
 
-        # 睿智语录库
+        # Wisdom quotes library
         wisdom_quotes = [
-            "「工欲善其事，必先利其器。」",
-            "「不积跬步，无以至千里；不积小流，无以成江海。」",
-            "「知行合一，方可致远。」",
-            "「业精于勤，荒于嬉；行成于思，毁于随。」",
-            "「路漫漫其修远兮，吾将上下而求索。」",
-            "「昨夜西风凋碧树，独上高楼，望尽天涯路。」",
-            "「衣带渐宽终不悔，为伊消得人憔悴。」",
-            "「众里寻他千百度，蓦然回首，那人却在，灯火阑珊处。」",
-            "「世事洞明皆学问，人情练达即文章。」",
-            "「纸上得来终觉浅，绝知此事要躬行。」"
+            "「To do a good job, an artisan needs the best tools.」",
+            "「A journey of a thousand miles begins with a single step.」",
+            "「Knowledge and action combined lead to a far journey.」",
+            "「Excellence comes from diligence, neglect from play.」",
+            "「The road ahead is long and hard, I will search high and low.」",
+            "「Last night the west wind withered the green trees, alone I climb the high tower, gazing at the endless road.」",
+            "「I have no regrets as my clothes grow loose, pining for her I grow thin.」",
+            "「Hundreds and thousands of times I searched for her in the crowd, suddenly turning back, she is there in the dim light.」",
+            "「A clear understanding of world affairs is genuine knowledge.」",
+            "「What is learned from books feels shallow, to truly understand it you must practice it.」"
         ]
 
         quote = random.choice(wisdom_quotes)
 
-        # 组合内容
+        # Assemble content
         result = []
 
-        # 添加核心内容
+        # Add core content
         if selected_points:
             for point in selected_points:
-                # 隐私清理
+                # Privacy cleanup
                 point = sanitize_content(point)
-                # 截断过长的内容
+                # Truncate overly long content
                 if len(point) > 40:
                     point = point[:37] + "..."
-                # 每行最多 20 字
+                # Max 20 characters per line
                 if len(point) <= 20:
                     result.append(f"· {point}")
                 else:
-                    # 按 20 字切分
+                    # Split by 20 characters
                     for j in range(0, len(point), 20):
                         chunk = point[j:j+20]
                         if j == 0:
@@ -97,7 +97,7 @@ def extract_memo_from_file(file_path: str) -> str:
                         else:
                             result.append(f"  {chunk}")
 
-        # 添加睿智语录
+        # Add wisdom quote
         if quote:
             if len(quote) <= 20:
                 result.append(f"\n{quote}")
@@ -113,4 +113,4 @@ def extract_memo_from_file(file_path: str) -> str:
 
     except Exception as e:
         print(f"extract_memo_from_file failed: {e}")
-        return "「昨日记录加载失败」\n\n「往者不可谏，来者犹可追。」"
+        return "「Failed to load yesterday's record」\n\n「The past cannot be undone, the future can still be pursued.」"

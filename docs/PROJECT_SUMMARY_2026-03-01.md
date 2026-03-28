@@ -1,99 +1,99 @@
-# Star Office UI — 项目阶段总结（2026-03-01）
+# Star Office UI — Project Phase Summary (2026-03-01)
 
-## 一、今日工作总结
+## I. Today's Work Summary
 
-今天主要完成了两条主线：
+Today primarily completed two main threads:
 
-1. **多龙虾（多 OpenClaw）加入办公室能力稳定化**
-2. **手机版展示能力完善**
+1. **Stabilized the capability for multiple Lobsters (multiple OpenClaws) to join the office**
+2. **Improved mobile display capabilities**
 
-并且围绕“阿文龙虾状态同步不稳定”做了多轮排查，明确了链路问题与当前未完全闭环点。
+And conducted multiple rounds of troubleshooting around "Arwen Lobster state synchronization instability", clarifying the linkage issues and the points that have not been fully closed yet.
 
 ---
 
-## 二、已完成能力（可对外描述）
+## II. Completed Capabilities (Can be described externally)
 
-### 1) 多 Agent 加入与显示
-- 支持多个远端 OpenClaw 通过 `join-agent` 加入办公室。
-- 每个访客有独立 `agentId`、名字、状态、区域与动画。
-- 场景会基于 `/agents` 动态创建、更新、移除访客。
+### 1) Multi-Agent Joining and Display
+- Supports multiple remote OpenClaws joining the office via `join-agent`.
+- Each guest has an independent `agentId`, name, state, area, and animation.
+- The scene dynamically creates, updates, and removes guests based on `/agents`.
 
-### 2) 固定可复用 Join Key 机制
-- 一次性 key 改为固定可复用 key：`ocj_starteam01` ~ `ocj_starteam08`。
-- 去掉了“used 即不可再用”的阻断逻辑，支持长期复用。
-- 加入了并发上限配置（`maxConcurrent`），默认每个 key 限 3 并发在线。
+### 2) Fixed Reusable Join Key Mechanism
+- One-time keys changed to fixed reusable keys: `ocj_starteam01` ~ `ocj_starteam08`.
+- Removed the "cannot be used once used" blocking logic, supporting long-term reuse.
+- Added concurrency limit logic (`maxConcurrent`), defaulting to a limit of 3 concurrently online per key.
 
-### 3) 并发限制修复（关键）
-- 发现 4 并发仍能通过的根因是后端竞争条件（race condition）。
-- 在 `join-agent` 临界区增加锁 + 锁内重读状态，修复后压测通过：
-  - 前 3 个 200
-  - 第 4 个 429
+### 3) Concurrency Limit Fix (Critical)
+- Discovered the root cause of the 4th concurrent connection passing was a backend race condition.
+- Added a lock in the `join-agent` critical section + re-read state inside the lock. Passed stress testing after the fix:
+  - First 3 return 200
+  - 4th returns 429
 
-### 4) 访客动画与性能优化
-- 访客动画改为像素动画精灵，不再是静态星星。
-- `guest_anim_1~6` 已转为 `.webp`，显著降低加载体积。
-- 前端预加载与渲染资源已切换到 webp 优先。
+### 4) Guest Animation and Performance Optimization
+- Guest animation changed to pixel animation sprites, no longer static stars.
+- `guest_anim_1~6` converted to `.webp`, significantly reducing load sizes.
+- Frontend preloading and rendering resources prioritized loading webp.
 
-### 5) 状态 → 区域映射统一
-- 规则统一：
+### 5) State → Area Mapping Unified
+- Rules unified:
   - `idle -> breakroom`
   - `writing/researching/executing/syncing -> writing`
   - `error -> error`
-- 访客 bubble 文案已按状态做映射，不再与区域脱节。
+- Guest bubble copy is mapped according to state, no longer disjointed from the area.
 
-### 6) 名字与气泡层级/位置优化
-- 非 demo 访客名字、气泡位置上移，减少遮挡。
-- 访客气泡锚点改为相对名字计算，确保“气泡在名字上方”。
-- demo 与真实访客路径已区分，互不干扰。
+### 6) Name and Bubble Hierarchy/Position Optimization
+- Names and bubble positions for non-demo guests shifted up, reducing obstruction.
+- Guest bubble anchors changed to calculate relative to names, ensuring "bubbles are above the names".
+- Demo and real guest paths are separated, not interfering with each other.
 
-### 7) 手机版展示
-- 现有 UI 在手机端可访问与展示，适合演示与外部查看。
-- 关键控件布局做过整理，移动端基本可用。
-
----
-
-## 三、当前未完全闭环点（诚实披露）
-
-### 阿文龙虾“真实状态稳定同步”仍存在偶发不一致
-虽然链路已多次验证打通（writing 能进工作区、idle 能回休息区），但线上实测仍出现过：
-- 本地脚本持续推 idle（旧版本脚本 / 读错状态源）
-- 403 未授权（离线状态恢复/旧 agentId 缓存问题）
-- 前台退出触发 leave-agent 后角色消失
-
-> 结论：
-> - “机制可行、链路可通”已经验证；
-> - “端到端持续稳定”还需要继续收口（尤其阿文侧运行脚本版本统一、状态源统一、常驻策略统一）。
+### 7) Mobile Display
+- The existing UI can be accessed and displayed on mobile phones, suitable for demos and external viewing.
+- Basic layout adaptations made for key controls, generally usable on mobile.
 
 ---
 
-## 四、今天新增/调整文件（核心）
+## III. Currently Unclosed Points (Honest Disclosure)
+
+### "True State Stable Sync" for Arwen Lobster still has occasional inconsistencies
+Although the linkage has been verified and connected multiple times (writing can enter workspace, idle can return to break room), online testing still occasionally showed:
+- Local script continuously pulling idle (older version script / reading wrong state source)
+- 403 Unauthorized (offline state recovery / old agentId caching issue)
+- Character disappearing after foreground exit triggers leave-agent
+
+> Conclusion:
+> - "Mechanism is feasible, linkage is connected" has been verified;
+> - "End-to-end continuous stability" still needs further wrap up (especially unifying Arwen-side running script versions, unifying state sources, unifying resident strategies).
+
+---
+
+## IV. Newly Added/Adjusted Files Today (Core)
 
 - `backend/app.py`
-  - join 并发限制加锁修复
-  - offline/approved 授权流逻辑调整（便于恢复）
+  - join concurrency limit lock fix
+  - offline/approved authorization flow logic adjustment (for easier recovery)
 - `join-keys.json`
-  - 固定 key + `maxConcurrent: 3`
-- `frontend/index.html`（及相关渲染逻辑）
-  - 访客动画、名字与气泡定位优化
-  - 状态文案映射调整
-- `office-agent-push.py`（多版本并行调试）
-  - 增加状态源诊断日志
-  - 增加环境变量覆盖逻辑
-  - 修复 AGENT_NAME 读取时机问题
+  - Fixed keys + `maxConcurrent: 3`
+- `frontend/index.html` (and related rendering logic)
+  - Guest animation, name and bubble positioning optimization
+  - State copy mapping adjustment
+- `office-agent-push.py` (Multi-version parallel debugging)
+  - Added state source diagnostic logs
+  - Added environment variable override logic
+  - Fixed AGENT_NAME read timing issue
 
 ---
 
-## 五、对外开源前建议描述（建议文案）
+## V. Suggested External Description Before Open Sourcing (Suggested Copy)
 
-> Star Office UI 是一个可视化多 Agent 像素办公室：
-> 支持多个 OpenClaw 远端接入、状态驱动位置渲染、访客动画与移动端访问。
-> 项目当前已完成多 Agent 主链路与 UI 能力；状态同步稳定性仍在持续优化中。
+> Star Office UI is a visualized multi-Agent pixel office:
+> Supports multiple OpenClaw remote accesses, state-driven position rendering, guest animations, and mobile access.
+> The project has currently completed the multi-Agent main linkage and UI capabilities; state synchronization stability is still continuously being optimized.
 
 ---
 
-## 六、下一步（建议）
-1. 统一阿文侧运行脚本“唯一来源”，避免旧版本混跑。
-2. 增加 `/agent-push` 与前端渲染诊断日志（可开关）。
-3. 增加“状态过期自动 idle”兜底（脚本侧 + 服务端侧双保险）。
-4. 补一份可复现联调流程（10 分钟 smoke test）。
-5. 完成开源前隐私清理与发布清单（见 `docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`）。
+## VI. Next Steps (Suggestions)
+1. Unify Arwen-side running script to a "single source of truth", avoiding mixing old versions.
+2. Add diagnostic logs for `/agent-push` and frontend rendering (toggleable).
+3. Add a fallback for "state expiration auto idle" (Script side + Server side double insurance).
+4. Supplement a reproducible linkage process (10-minute smoke test).
+5. Complete privacy cleanup and release checklist before open sourcing (see `docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`).

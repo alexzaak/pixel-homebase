@@ -1,221 +1,221 @@
 # Star Office UI
 
-🌐 Language: [中文](./README.md) | [English](./README.en.md) | **日本語**
+🌐 Language: **English** | [中文](./README.zh.md) | [日本語](./README.ja.md)
 
-![Star Office UI カバー](docs/screenshots/readme-cover-2.jpg)
+![Star Office UI Cover](docs/screenshots/readme-cover-2.jpg)
 
-**ピクセルアート風 AI オフィスダッシュボード** —— AI アシスタントの作業状態をリアルタイムで可視化し、「誰が何をしているか」「昨日何をしたか」「今オンラインか」を直感的に把握できます。
+**A pixel-art AI office dashboard** — Visualizes the working status of AI assistants in real-time, letting you intuitively see "who is doing what, what was done yesterday, and whether they are online now".
 
-マルチ Agent 協調、中英日 3 言語、AI 画像生成による模様替え、デスクトップペットモードに対応。
-[OpenClaw](https://github.com/openclaw/openclaw) との統合で最高の体験が得られますが、単体でもステータスダッシュボードとして利用可能です。
+Supports multi-Agent collaboration, Tri-lingual (CN/EN/JP), AI-generated interior design, and Desktop Pet mode.
+Provides the best experience when deeply integrated with [OpenClaw](https://github.com/openclaw/openclaw), but can also be deployed independently as a status dashboard.
 
-> 本プロジェクトは **[Ring Hyacinth](https://x.com/ring_hyacinth)** と **[Simon Lee](https://x.com/simonxxoo)** の共同制作（co-created project）であり、コミュニティの開発者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）とともに継続的にメンテナンス・改善を行っています。
-> Issue や PR を歓迎します。貢献してくださるすべての方に感謝いたします。
+> This project was co-created by **[Ring Hyacinth](https://x.com/ring_hyacinth)** and **[Simon Lee](https://x.com/simonxxoo)**, and is continuously maintained and co-built with community developers ([@Zhaohan-Wang](https://github.com/Zhaohan-Wang), [@Jah-yee](https://github.com/Jah-yee), [@liaoandi](https://github.com/liaoandi)).
+> We welcome Issues and PRs, and thank every contributor for their support.
 
 ---
 
-## ✨ クイックスタート
+## ✨ Quick Experience
 
-### 方法 1：ロブスターにデプロイしてもらう（OpenClaw ユーザー向け）
+### Method 1: Let your Lobster deploy it for you (Recommended for OpenClaw users)
 
-[OpenClaw](https://github.com/openclaw/openclaw) をご利用中なら、以下のメッセージをロブスターに送るだけ：
+If you are using [OpenClaw](https://github.com/openclaw/openclaw), simply send the following sentence to your Lobster:
 
 ```text
-この SKILL.md に従って Star Office UI をデプロイしてください：
+Please follow this SKILL.md to help me deploy Star Office UI:
 https://github.com/ringhyacinth/Star-Office-UI/blob/master/SKILL.md
 ```
 
-ロブスターが自動的にリポジトリのクローン、依存関係のインストール、バックエンドの起動、ステータス同期の設定を行い、アクセス URL をお知らせします。
+Your Lobster will automatically clone, install dependencies, start the backend, configure status synchronization, and send you the access URL.
 
-### 方法 2：30 秒手動セットアップ
+### Method 2: 30-Second Manual Deployment
 
-> **Python 3.10+ が必要です**（コードベースは `X | Y` ユニオン型構文を使用しており、3.9 以前のバージョンではサポートされていません）
+> **Environment Requirements: Python 3.10+** (The code uses the `X | Y` union type syntax, not supported in 3.9 and below)
 
 ```bash
-# 1) リポジトリをクローン
+# 1) Clone the repository
 git clone https://github.com/ringhyacinth/Star-Office-UI.git
 cd Star-Office-UI
 
-# 2) 依存関係をインストール（Python 3.10+ が必要）
+# 2) Install dependencies (Requires Python 3.10+)
 python3 -m pip install -r backend/requirements.txt
 
-# 3) 状態ファイルを初期化（初回のみ）
+# 3) Prepare the state file (First time)
 cp state.sample.json state.json
 
-# 4) バックエンドを起動
+# 4) Start the backend
 cd backend
 python3 app.py
 ```
 
-**http://127.0.0.1:19000** を開き、状態を切り替えてみましょう：
+Open **http://127.0.0.1:19000** and try switching states:
 
 ```bash
-python3 set_state.py writing "ドキュメント整理中"
-python3 set_state.py error "問題を検出、調査中"
-python3 set_state.py idle "待機中"
+python3 set_state.py writing "Organizing documents"
+python3 set_state.py error "Issue found, investigating"
+python3 set_state.py idle "Standing by"
 ```
 
-![Star Office UI プレビュー](docs/screenshots/readme-cover-1.jpg)
+![Star Office UI Preview](docs/screenshots/readme-cover-1.jpg)
 
 ---
 
-## 🤔 誰に向いている？
+## 🤔 Who is this for?
 
-### OpenClaw / AI Agent をお持ちの方
-これが**フル体験**です。Agent が作業中に自動でステータスを切り替え、ピクセルキャラクターがリアルタイムで対応エリアに移動します。ページを開くだけで、AI が今何をしているかがわかります。
+### Users with OpenClaw / AI Agents
+This is the **complete experience**. The Agent automatically switches states while working, and the pixel character in the office will walk to the corresponding area in real-time — you just need to open the web page to see what the AI is currently doing.
 
-### OpenClaw をお持ちでない方
-デプロイして使うことも全く問題ありません：
-- `set_state.py` や API で手動 / スクリプトからステータスを更新
-- ピクセルアート風の個人ステータスページやリモートワークダッシュボードとして利用
-- HTTP リクエストを送れるシステムなら何でもステータスを駆動可能
-
----
-
-## 📋 機能一覧
-
-1. **ステータス可視化** —— 6 種類の状態（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）がオフィスの各エリアに自動マッピングされ、アニメーションと吹き出しでリアルタイム表示
-2. **昨日メモ** —— `memory/*.md` から直近の作業記録を自動取得し、匿名化して「昨日メモ」カードとして表示
-3. **マルチ Agent 協調** —— join key で他の Agent をオフィスに招待し、全員のステータスをリアルタイム確認
-4. **中英日 3 言語対応** —— CN / EN / JP をワンクリック切替、UI テキスト・吹き出し・ローディング表示すべてが連動
-5. **アート資産カスタマイズ** —— サイドバーからキャラクター / 背景 / 装飾素材を管理、動的フレーム同期でちらつき防止
-6. **AI 画像生成による模様替え** —— Gemini API を接続してオフィス背景を AI 生成; API 未接続でもコア機能は利用可能
-7. **モバイル対応** —— スマホからそのまま閲覧可能、外出先からのクイックチェックに最適
-8. **セキュリティ強化** —— サイドバーのパスワード保護、本番環境での弱パスワード拒否、Session Cookie 強化
-9. **柔軟な公開アクセス** —— Cloudflare Tunnel でワンステップ公開、独自ドメイン / リバースプロキシにも対応
-10. **デスクトップペット版** —— オプションの Electron デスクトップラッパーで、オフィスを透明ウィンドウのデスクトップペットに（下記参照）
+### Users without OpenClaw
+You can also easily deploy it. You can:
+- Manually / use scripts to push status via `set_state.py` or API
+- Treat it as a pixel-art personal status page / remote work dashboard
+- Integrate any system capable of sending HTTP requests to drive the status
 
 ---
 
-## 🚀 詳細セットアップガイド
+## 📋 Features Overview
 
-### 1) 依存関係インストール
+1. **Status Visualization** — 6 states (`idle` / `writing` / `researching` / `executing` / `syncing` / `error`) automatically map to different areas of the office, displayed in real-time with animations + speech bubbles
+2. **Yesterday's Memo** — Automatically reads the recent work log from `memory/*.md`, sanitizes it, and displays it as a "Yesterday's Memo" card
+3. **Multi-Agent Collaboration** — Invite other Agents to join your office via a join key to see multi-person status in real-time
+4. **Tri-lingual Support** — One-click switch between CN / EN / JP, UI text, speech bubbles, and loading prompts all sync together
+5. **Custom Art Assets** — Sidebar to manage characters / scenes / decor assets, supports dynamic frame synchronization to avoid flickering
+6. **AI Interior Design** — Integrates Gemini API to change the office background using AI; core features work normally even without the API
+7. **Mobile Adaptation** — Can be viewed directly on mobile phones, perfect for a quick glance while outdoors
+8. **Security Enhancements** — Sidebar password protection, weak password blocking in production, Session Cookie hardening
+9. **Flexible Public Access** — Cloudflare Tunnel recommended for one-click public access, custom domains / reverse proxies also supported
+10. **Desktop Pet Mode** — Optional Electron desktop wrapper that turns the office into a transparent desktop pet widget (see details below)
+
+---
+
+## 🚀 Detailed Deployment Guide
+
+### 1) Install Dependencies
 
 ```bash
 cd Star-Office-UI
 python3 -m pip install -r backend/requirements.txt
 ```
 
-### 2) 状態ファイル初期化
+### 2) Initialize State File
 
 ```bash
 cp state.sample.json state.json
 ```
 
-### 3) バックエンド起動
+### 3) Start Backend
 
 ```bash
 cd backend
 python3 app.py
 ```
 
-`http://127.0.0.1:19000` を開く
+Open `http://127.0.0.1:19000`
 
-> ✅ ローカル開発ではデフォルト設定のままで構いませんが、本番環境では `.env.example` を `.env` にコピーし、`FLASK_SECRET_KEY` と `ASSET_DRAWER_PASS` に十分な長さのランダム値を設定してください。
+> ✅ You can keep default settings for the first deployment; for production environments, please copy `.env.example` to `.env` and set a strong random `FLASK_SECRET_KEY` and `ASSET_DRAWER_PASS` to prevent weak passwords and session leaks.
 
-### 4) ステータス切替
+### 4) Switch States
 
 ```bash
-python3 set_state.py writing "ドキュメント整理中"
-python3 set_state.py syncing "進捗同期中"
-python3 set_state.py error "問題を検出、調査中"
-python3 set_state.py idle "待機中"
+python3 set_state.py writing "Organizing documents"
+python3 set_state.py syncing "Syncing progress"
+python3 set_state.py error "Issue found, investigating"
+python3 set_state.py idle "Standing by"
 ```
 
-### 5) 公開アクセス（任意）
+### 5) Public Access (Optional)
 
 ```bash
 cloudflared tunnel --url http://127.0.0.1:19000
 ```
 
-`https://xxx.trycloudflare.com` のリンクを共有するだけで OK。
+Take the `https://xxx.trycloudflare.com` link to share it.
 
-### 6) インストール確認（任意）
+### 6) Verify Installation (Optional)
 
 ```bash
 python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
 ```
 
-すべてのチェックが `OK` と表示されればデプロイ成功です。
+If all checks return `OK`, the deployment is successful.
 
 ---
 
-## 🦞 OpenClaw 連携
+## 🦞 OpenClaw Deep Integration
 
-> 以下は [OpenClaw](https://github.com/openclaw/openclaw) ユーザー向けの内容です。OpenClaw を使用していない場合はスキップしてください。
+> The following content is for [OpenClaw](https://github.com/openclaw/openclaw) users. If you do not use OpenClaw, you can skip this section.
 
-### ステータス自動同期
+### Automatic Status Synchronization
 
-`SOUL.md`（またはエージェント設定ファイル）に以下のルールを追加すると、Agent がステータスを自動で更新します：
+Add the following rules to your `SOUL.md` (or Agent rule file) so the Agent automatically maintains its status:
 
 ```markdown
-## Star Office ステータス同期ルール
-- タスク開始時：`python3 set_state.py <状態> "<説明>"` を実行してから作業開始
-- タスク完了時：`python3 set_state.py idle "待機中"` を実行してから返答
+## Star Office Status Synchronization Rules
+- Upon receiving a task: Execute `python3 set_state.py <state> "<description>"` before starting work
+- Upon completing a task: Execute `python3 set_state.py idle "Standing by"` before replying
 ```
 
-**6 種類のステータス → 3 つのエリア：**
+**Mapping 6 states → 3 areas:**
 
-| ステータス | オフィスエリア | 使用場面 |
-|-----------|--------------|---------|
-| `idle` | 🛋 休憩エリア（ソファ） | 待機 / タスク完了 |
-| `writing` | 💻 ワークエリア（デスク） | コーディング / ドキュメント作成 |
-| `researching` | 💻 ワークエリア | 検索 / リサーチ |
-| `executing` | 💻 ワークエリア | コマンド実行 / タスク処理 |
-| `syncing` | 💻 ワークエリア | データ同期 / プッシュ |
-| `error` | 🐛 バグコーナー | エラー / デバッグ |
+| State | Office Area | Trigger Scenario |
+|------|-----------|---------|
+| `idle` | 🛋 Break Area (Sofa) | Standing by / Task complete |
+| `writing` | 💻 Workspace (Desk) | Writing code / Writing docs |
+| `researching` | 💻 Workspace | Searching / Researching |
+| `executing` | 💻 Workspace | Executing commands / Running tasks |
+| `syncing` | 💻 Workspace | Syncing data / Pushing |
+| `error` | 🐛 Bug Area | Error / Exception investigation |
 
-### 他の Agent をオフィスに招待
+### Invite Other Agents to Join the Office
 
-**Step 1：join key を準備**
+**Step 1: Prepare the join key**
 
-バックエンドを初回起動するとき、カレントディレクトリに `join-keys.json` が存在しない場合は、`join-keys.sample.json` を元にランタイム用の `join-keys.json` が自動生成されます（例として `ocj_example_team_01` などのサンプル key が含まれます）。生成された `join-keys.json` を編集して key を追加・変更・削除できます。各 key はデフォルトで最大 3 名まで同時接続できます。
+When starting the backend for the first time, if `join-keys.json` does not exist in the current directory, the service will automatically generate a runtime `join-keys.json` based on `join-keys.sample.json` (containing example keys, e.g. `ocj_example_team_01`). You can manually add, modify, or delete keys in the generated `join-keys.json`. Each key supports a maximum of 3 concurrent online users by default.
 
-**Step 2：ゲストにプッシュスクリプトを実行してもらう**
+**Step 2: Have the Guest Agent Run the Push Script**
 
-ゲストは `office-agent-push.py` をダウンロードし、3 つの変数を入力するだけ：
+The guest only needs to download `office-agent-push.py` and fill in 3 variables:
 
 ```python
-JOIN_KEY = "ocj_starteam02"          # あなたが割り当てたキー
-AGENT_NAME = "太郎のロブスター"        # 表示名
-OFFICE_URL = "https://office.hyacinth.im"  # あなたのオフィス URL
+JOIN_KEY = "ocj_starteam02"          # Your assigned key
+AGENT_NAME = "Little Ming's Lobster" # Display name
+OFFICE_URL = "https://office.hyacinth.im"  # Your office URL
 ```
 
 ```bash
 python3 office-agent-push.py
 ```
 
-スクリプトが自動で参加し、15 秒ごとにステータスをプッシュします。ゲストがダッシュボードに表示され、状態に応じて該当エリアに移動します。
+The script will automatically join the office and push the state every 15 seconds. The guest will appear on the dashboard and automatically walk to the corresponding area based on their state.
 
-**Step 3（任意）：ゲストも Skill をインストール**
+**Step 3 (Optional): Guest Installs Skill**
 
-ゲストは `frontend/join-office-skill.md` を Skill として使うこともできます。Agent が設定とプッシュを自動で行います。
+The guest can also use `frontend/join-office-skill.md` as a Skill, and the Agent will automatically complete the configuration and pushing.
 
-> 詳しいゲスト参加手順は [`frontend/join-office-skill.md`](./frontend/join-office-skill.md) を参照。
-
----
-
-## 📡 API リファレンス
-
-| エンドポイント | 説明 |
-|--------------|------|
-| `GET /health` | ヘルスチェック |
-| `GET /status` | メイン Agent のステータス取得 |
-| `POST /set_state` | メイン Agent のステータス設定 |
-| `GET /agents` | 全 Agent リスト取得 |
-| `POST /join-agent` | ゲスト参加 |
-| `POST /agent-push` | ゲストステータスプッシュ |
-| `POST /leave-agent` | ゲスト退出 |
-| `GET /yesterday-memo` | 昨日メモ取得 |
-| `GET /config/gemini` | Gemini API 設定取得 |
-| `POST /config/gemini` | Gemini API 設定変更 |
-| `GET /assets/generate-rpg-background/poll` | 画像生成の進捗確認 |
+> Detailed instructions for guest access can be found in [`frontend/join-office-skill.md`](./frontend/join-office-skill.md)
 
 ---
 
-## 🖥 デスクトップペット版（任意）
+## 📡 Common APIs
 
-`desktop-pet/` ディレクトリには **Electron** ベースのデスクトップラッパーが含まれており、ピクセルオフィスを透明ウィンドウのデスクトップペットにできます。
+| Endpoint | Description |
+|------|------|
+| `GET /health` | Health Check |
+| `GET /status` | Get Primary Agent Status |
+| `POST /set_state` | Set Primary Agent Status |
+| `GET /agents` | Get Multi-Agent List |
+| `POST /join-agent` | Guest Joins Office |
+| `POST /agent-push` | Guest Pushes Status |
+| `POST /leave-agent` | Guest Leaves |
+| `GET /yesterday-memo` | Get Yesterday's Memo |
+| `GET /config/gemini` | Get Gemini API Configuration |
+| `POST /config/gemini` | Set Gemini API Configuration |
+| `GET /assets/generate-rpg-background/poll` | Poll Image Generation Progress |
+
+---
+
+## 🖥 Desktop Pet Mode (Optional)
+
+The `desktop-pet/` directory provides an **Electron**-based desktop wrapper version that can turn the pixel office into a transparent desktop pet window.
 
 ```bash
 cd desktop-pet
@@ -223,68 +223,68 @@ npm install
 npm run dev
 ```
 
-- 起動時に Python バックエンドを自動起動
-- デフォルトで `http://127.0.0.1:19000/?desktop=1` を表示
-- 環境変数でプロジェクトパスや Python パスをカスタマイズ可能
+- Automatically launches the Python backend on startup
+- The window points to `http://127.0.0.1:19000/?desktop=1` by default
+- Supports customizing the project path and Python path via environment variables
 
-> ⚠️ これは**オプションの実験的機能**であり、現在は主に macOS で開発・テストされています。詳細は [`desktop-pet/README.md`](./desktop-pet/README.md) を参照。
+> ⚠️ This is an **optional experimental feature**, currently primarily developed and tested on macOS. For details, see [`desktop-pet/README.md`](./desktop-pet/README.md).
 >
-> 🙏 デスクトップペット版は [@Zhaohan-Wang](https://github.com/Zhaohan-Wang) が独自に開発しました。貢献に感謝します！
+> 🙏 The Desktop Pet mode was independently developed by [@Zhaohan-Wang](https://github.com/Zhaohan-Wang). Thank you for his contribution!
 
 ---
 
-## 🎨 アート資産とライセンス
+## 🎨 Art Assets and Open Source Licenses
 
-### 資産の出典
+### Asset Sources
 
-ゲストキャラクターのアニメーションには **LimeZu** のフリー素材を使用しています：
+The guest character animations use free assets from **LimeZu**:
 - [Animated Mini Characters 2 (Platformer) [FREE]](https://limezu.itch.io/animated-mini-characters-2-platform-free)
 
-再配布やデモの際は出典を明記し、原作者のライセンス条項に従ってください。
+Please retain the source attribution when redistributing / demonstrating, and adhere to the original author's licensing terms.
 
-### ライセンス
+### Licensing Agreement
 
-- **コード / ロジック：MIT**（[`LICENSE`](./LICENSE) を参照）
-- **アート資産：非商用のみ**（学習 / デモ / 共有用途）
+- **Code / Logic: MIT** (See [`LICENSE`](./LICENSE))
+- **Art Assets: Commercial Use Prohibited** (For learning / demonstration / communication purposes only)
 
-> 商用利用の場合は、すべてのアート資産をオリジナル素材に差し替えてください。
+> If you need commercial use, please replace all art assets with your own original materials.
 
 ---
 
-## 📝 更新履歴
+## 📝 Changelog
 
-| 日付 | 概要 | 詳細 |
+| Date | Summary | Details |
 |------|------|------|
-| 2026-03-06 | 🔌 デフォルトポート変更 — OpenClaw Browser Control との競合を避けるため、バックエンドの既定ポートを 18791 から 19000 に変更。スクリプト、デスクトップシェル、ドキュメントの既定値も同期更新 | [`docs/CHANGELOG_2026-03.md`](./docs/CHANGELOG_2026-03.md) |
-| 2026-03-05 | 📱 安定性修正 — CDN キャッシュ修正、画像生成非同期化、モバイルサイドバー UX 改善、join key 有効期限・同時接続制御 | [`docs/UPDATE_REPORT_2026-03-05.md`](./docs/UPDATE_REPORT_2026-03-05.md) |
-| 2026-03-04 | 🔒 P0/P1 セキュリティ強化 — 弱パスワード拒否、バックエンド分割、stale ステータス自動 idle 復帰、スケルトンローディング | [`docs/UPDATE_REPORT_2026-03-04_P0_P1.md`](./docs/UPDATE_REPORT_2026-03-04_P0_P1.md) |
-| 2026-03-03 | 📋 オープンソース公開チェックリスト完了 | [`docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`](./docs/OPEN_SOURCE_RELEASE_CHECKLIST.md) |
-| 2026-03-01 | 🎉 **v2 リビルド公開** — 3 言語対応、資産管理システム、AI 画像生成による模様替え、アート資産全面刷新 | [`docs/FEATURES_NEW_2026-03-01.md`](./docs/FEATURES_NEW_2026-03-01.md) |
+| 2026-03-06 | 🔌 Default Port Adjustment — Adjusted default backend port from 18791 to 19000 to avoid conflicts with OpenClaw Browser Control port; synced scripts, desktop shell, and doc defaults | [`docs/CHANGELOG_2026-03.md`](./docs/CHANGELOG_2026-03.md) |
+| 2026-03-05 | 📱 Stability Fixes — Fixed CDN caching, async image generation, optimized mobile sidebar, Join Key expiration and concurrency control | [`docs/UPDATE_REPORT_2026-03-05.md`](./docs/UPDATE_REPORT_2026-03-05.md) |
+| 2026-03-04 | 🔒 P0/P1 Security Hardening — Blocked weak passwords, separated backend modules, auto-idle for stale status, optimized first-screen skeleton loading | [`docs/UPDATE_REPORT_2026-03-04_P0_P1.md`](./docs/UPDATE_REPORT_2026-03-04_P0_P1.md) |
+| 2026-03-03 | 📋 Completed open-source release checklist | [`docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`](./docs/OPEN_SOURCE_RELEASE_CHECKLIST.md) |
+| 2026-03-01 | 🎉 **v2 Remaster Release** — Added Tri-lingual support, asset management system, AI interior design, comprehensive replacement of art assets | [`docs/FEATURES_NEW_2026-03-01.md`](./docs/FEATURES_NEW_2026-03-01.md) |
 
 ---
 
-## 📁 プロジェクト構成
+## 📁 Project Structure
 
 ```text
 Star-Office-UI/
-├── backend/            # Flask バックエンド
+├── backend/            # Flask Backend
 │   ├── app.py
 │   ├── requirements.txt
 │   └── run.sh
-├── frontend/           # フロントエンドページ & 資産
+├── frontend/           # Frontend Pages and Assets
 │   ├── index.html
 │   ├── join.html
 │   ├── invite.html
 │   └── layout.js
-├── desktop-pet/        # Electron デスクトップラッパー（任意）
-├── docs/               # ドキュメント & スクリーンショット
+├── desktop-pet/        # Electron Desktop Pet Version (Optional)
+├── docs/               # Docs and Screenshots
 │   └── screenshots/
-├── office-agent-push.py  # ゲストプッシュスクリプト
-├── set_state.py          # ステータス切替スクリプト
-├── state.sample.json     # 状態ファイルテンプレート
-├── join-keys.sample.json # Join Key テンプレート（起動時に join-keys.json を生成）
+├── office-agent-push.py  # Guest Push Script
+├── set_state.py          # State Switch Script
+├── state.sample.json     # State File Template
+├── join-keys.sample.json # Join Key Template (Generates join-keys.json on start)
 ├── SKILL.md              # OpenClaw Skill
-└── LICENSE               # MIT ライセンス
+└── LICENSE               # MIT License
 ```
 
 ---

@@ -61,7 +61,7 @@ HOME_FAVORITES_INDEX_FILE = os.path.join(HOME_FAVORITES_DIR, "index.json")
 HOME_FAVORITES_MAX = 30
 ASSET_POSITIONS_FILE = os.path.join(ROOT_DIR, "asset-positions.json")
 
-# 性能保护：默认关闭“每次打开页面随机换背景”，避免首页首屏被磁盘复制拖慢
+# Performance protection: disable 'random home bg on page open' by default to avoid slow first screen due to disk copy
 AUTO_ROTATE_HOME_ON_PAGE_OPEN = (os.getenv("AUTO_ROTATE_HOME_ON_PAGE_OPEN", "0").strip().lower() in {"1", "true", "yes", "on"})
 AUTO_ROTATE_MIN_INTERVAL_SECONDS = int(os.getenv("AUTO_ROTATE_MIN_INTERVAL_SECONDS", "60"))
 _last_home_rotate_at = 0
@@ -145,7 +145,7 @@ def add_no_cache_headers(response):
 # Default state
 DEFAULT_STATE = {
     "state": "idle",
-    "detail": "等待任务中...",
+    "detail": "Waiting for tasks...",
     "progress": 0,
     "updated_at": datetime.now().isoformat()
 }
@@ -187,7 +187,7 @@ def load_state():
                 age = (datetime.now() - dt).total_seconds()
             if age > ttl:
                 state["state"] = "idle"
-                state["detail"] = "待命中（自动回到休息区）"
+                state["detail"] = "Standing by (auto-returned to break Area)"
                 state["progress"] = 0
                 state["updated_at"] = datetime.now().isoformat()
                 # persist the auto-idle so every client sees it consistently
@@ -202,7 +202,7 @@ def load_state():
 
 
 def get_office_name_from_identity():
-    """Read office display name from OpenClaw workspace IDENTITY.md (Name field) -> 'XXX的办公室'."""
+    """Read office display name from OpenClaw workspace IDENTITY.md (Name field) -> 'XXX\\'s Office'."""
     if not os.path.isfile(IDENTITY_FILE):
         return None
     try:
@@ -211,7 +211,7 @@ def get_office_name_from_identity():
         m = re.search(r"-\s*\*\*Name:\*\*\s*(.+)", content)
         if m:
             name = m.group(1).strip().replace("\r", "").split("\n")[0].strip()
-            return f"{name}的办公室" if name else None
+            return f"{name}'s Office" if name else None
     except Exception:
         pass
     return None
@@ -251,8 +251,8 @@ _INDEX_HTML_CACHE = None
 @app.route("/", methods=["GET"])
 def index():
     """Serve the pixel office UI with built-in version cache busting"""
-    # 默认禁用页面打开即换背景，避免首屏慢
-    # 如需启用，可配置 AUTO_ROTATE_HOME_ON_PAGE_OPEN=1
+    # Disable background change on page open by default to avoid slow first load
+    # Set AUTO_ROTATE_HOME_ON_PAGE_OPEN=1 to enable
     _maybe_apply_random_home_favorite()
 
     global _INDEX_HTML_CACHE
@@ -310,7 +310,7 @@ DEFAULT_AGENTS = [
         "name": "Star",
         "isMain": True,
         "state": "idle",
-        "detail": "待命中，随时准备为你服务",
+        "detail": "Standing by, ready to serve you",
         "updated_at": datetime.now().isoformat(),
         "area": "breakroom",
         "source": "local",
@@ -474,7 +474,7 @@ def _animated_to_spritesheet(
     """Convert animated GIF/WEBP to spritesheet, return (out_path, columns, rows, frames, out_frame_w, out_frame_h)."""
     backend = _ensure_magick_or_ffmpeg_available()
     if not backend:
-        raise RuntimeError("未检测到 ImageMagick/ffmpeg，无法自动转换动图")
+        raise RuntimeError("ImageMagick/ffmpeg not detected, cannot automatically convert animated image")
 
     ext = (out_ext or ".webp").lower()
     if ext not in {".webp", ".png"}:
@@ -490,7 +490,7 @@ def _animated_to_spritesheet(
             try:
                 with Image.open(upload_path) as im:
                     n = getattr(im, "n_frames", 1)
-                    # 默认保留用户原始帧尺寸（避免先压缩再放大导致像素糊）
+                    # Keep user's original frame size by default (avoid pixel blur from re-scaling)
                     if preserve_original:
                         out_fw, out_fh = im.size
                     for i in range(n):
@@ -507,23 +507,23 @@ def _animated_to_spritesheet(
         if frames <= 0:
             cmd1 = f"ffmpeg -y -i '{upload_path}' '{td}/f_%04d.png' >/dev/null 2>&1"
             if os.system(cmd1) != 0:
-                raise RuntimeError("动图抽帧失败（Pillow/ffmpeg 都失败）")
+                raise RuntimeError("Failed to extract frames from animated image (both Pillow and ffmpeg failed)")
             files = sorted([x for x in os.listdir(td) if x.startswith("f_") and x.endswith(".png")])
             frames = len(files)
             if frames <= 0:
-                raise RuntimeError("动图无有效帧")
+                raise RuntimeError("Animated image has no valid frames")
 
         if backend == "magick":
-            # 像素风动图转精灵表默认无损，避免颜色/边缘被压缩糊掉
+            # Pixel art animation to spritesheet is lossless by default, to avoid colors/edges being compressed and blurred
             quality_flag = "-define webp:lossless=true -define webp:method=6 -quality 100" if ext == ".webp" else ""
-            # 允许按 cols/rows 排布；默认单行
+            # Supports cols/rows layout; single row by default
             if cols is None or cols <= 0:
                 cols_eff = frames
             else:
                 cols_eff = max(1, int(cols))
             rows_eff = max(1, int(rows)) if (rows is not None and rows > 0) else max(1, math.ceil(frames / cols_eff))
 
-            # 先规范单帧尺寸
+            # Standardize single frame size first
             prep = ""
             if not preserve_original:
                 magick_filter = "-filter point" if pixel_art else ""
@@ -535,7 +535,7 @@ def _animated_to_spritesheet(
             )
             rc = os.system(cmd)
             if rc != 0:
-                raise RuntimeError("ImageMagick 拼图失败")
+                raise RuntimeError("ImageMagick montage failed")
             return out_path, cols_eff, rows_eff, frames, out_fw, out_fh
 
         ffmpeg_quality = "-lossless 1 -compression_level 6 -q:v 100" if ext == ".webp" else ""
@@ -556,7 +556,7 @@ def _animated_to_spritesheet(
             f"{ffmpeg_quality} '{out_path}' >/dev/null 2>&1"
         )
         if os.system(cmd2) != 0:
-            raise RuntimeError("ffmpeg 拼图失败")
+            raise RuntimeError("ffmpeg montage failed")
         return out_path, frames, 1, frames, out_fw, out_fh
 
 
@@ -583,7 +583,7 @@ def normalize_agent_state(s):
 
 # User-facing model aliases -> provider model ids
 USER_MODEL_TO_PROVIDER_MODELS = {
-    # 严格按用户要求：仅两种官方模型映射
+    # Strictly per user requirements: only two official model mappings
     "nanobanana-pro": [
         "nano-banana-pro-preview",
     ],
@@ -640,13 +640,13 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
     theme = random.choice(themes)
 
     if not (os.path.exists(GEMINI_PYTHON) and os.path.exists(GEMINI_SCRIPT)):
-        raise RuntimeError("生图脚本环境缺失：gemini-image-generate 未安装")
+        raise RuntimeError("Image generation script environment missing: gemini-image-generate is not installed")
 
     style_hint = (custom_prompt or "").strip()
     if not style_hint:
         style_hint = theme
 
-    # 默认使用更稳妥的 quality 档，避免 fast 模型在部分 API 通道不可用
+    # Use the safer quality mode by default to avoid the fast model being unavailable on some API channels
     mode = (speed_mode or "quality").strip().lower()
     if mode not in {"fast", "quality"}:
         mode = "quality"
@@ -654,7 +654,7 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
     configured_user_model = _normalize_user_model(runtime_cfg.get("gemini_model") or "nanobanana-pro")
     if mode == "fast":
         preferred_user_model = "nanobanana-2"
-        # fast 也提高基础清晰度：从 1024x576 提升到 1152x648（牺牲少量速度）
+        # fast also improves base resolution: from 1024x576 to 1152x648 (sacrificing slight speed)
         gen_width, gen_height = 1152, 648
         ref_width, ref_height = 1152, 648
     else:
@@ -662,8 +662,8 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
         gen_width, gen_height = width, height
         ref_width, ref_height = width, height
 
-    # 同时规避可能触发 400 的特殊能力参数：
-    # 仅 nanobanana-2 走 aspect-ratio，nanobanana-pro 交给模型默认比例（后续再标准化到 1280x720）
+    # Also avoid special capability parameters that might trigger 400:
+    # Only nanobanana-2 uses aspect-ratio, nanobanana-pro uses model default ratio (standardized to 1280x720 later)
     allow_aspect_ratio = (preferred_user_model == "nanobanana-2")
 
     prompt = (
@@ -686,7 +686,7 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
     if allow_aspect_ratio:
         cmd.extend(["--aspect-ratio", "16:9"])
 
-    # 强约束：每次都带固定参考图，保持房间区域布局不漂移
+    # Strong constraint: always bring a fixed reference image to keep the room layout from drifting
     ref_for_call = None
     if os.path.exists(ROOM_REFERENCE_IMAGE):
         ref_for_call = ROOM_REFERENCE_IMAGE
@@ -704,7 +704,7 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
         cmd.extend(["--reference-image", ref_for_call])
 
     env = os.environ.copy()
-    # 运行时配置优先：只保留 GEMINI_API_KEY，避免脚本因双 key 报错
+    # Runtime configuration preferred: only keep GEMINI_API_KEY to avoid script errors due to double keys
     env.pop("GOOGLE_API_KEY", None)
     env["GEMINI_API_KEY"] = api_key
 
@@ -732,15 +732,15 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
             m.extend(["--model", model_name])
         return m
 
-    # 模型多级回退（仅允许两类用户模型：nanobanana-pro / nanobanana-2）
-    # 每个用户模型映射到若干 provider 真实模型。
+    # Multi-level model fallback (only two user models allowed: nanobanana-pro / nanobanana-2)
+    # Each user model maps to several provider real models.
     user_model_order = [preferred_user_model, configured_user_model]
     user_model_order = [m for i, m in enumerate(user_model_order) if m and m not in user_model_order[:i]]
 
     model_candidates = []
     for um in user_model_order:
         model_candidates.extend(_provider_model_candidates(um))
-    # 去重并清理空项
+    # Deduplicate and clean up empty items
     model_candidates = [m for i, m in enumerate(model_candidates) if m and m not in model_candidates[:i]]
 
     proc = None
@@ -757,7 +757,7 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
         err_text = (proc.stderr or proc.stdout or "").strip()
         last_err_text = err_text
 
-        # key 失效/泄漏：立即终止，不继续尝试
+        # key invalid/leaked: terminate immediately, do not keep trying
         low = err_text.lower()
         if "your api key was reported as leaked" in low or "permission_denied" in low:
             raise RuntimeError("API_KEY_REVOKED_OR_LEAKED")
@@ -766,43 +766,43 @@ def _generate_rpg_background_to_webp(out_webp_path: str, width: int = 1280, heig
             model_unavailable_count += 1
             continue
 
-        # 非模型不可用错误，直接返回真实错误
-        raise RuntimeError(f"生图失败: {err_text}")
+        # Not a model unavailable error, return the real error directly
+        raise RuntimeError(f"Image generation failed: {err_text}")
 
     if proc is None or proc.returncode != 0:
         err_text = (last_err_text or "").strip()
         if model_unavailable_count >= len(model_candidates) or _is_model_unavailable_error(err_text):
             brief = (err_text or "").replace("\n", " ")[:240]
             raise RuntimeError(f"MODEL_NOT_AVAILABLE::{brief}")
-        raise RuntimeError(f"生图失败: {err_text}")
+        raise RuntimeError(f"Image generation failed: {err_text}")
 
     try:
         result = json.loads(proc.stdout.strip().splitlines()[-1])
     except Exception:
-        raise RuntimeError("生图结果解析失败")
+        raise RuntimeError("Failed to parse image generation result")
 
     files = result.get("files") or []
     if not files:
-        raise RuntimeError("生图未返回文件")
+        raise RuntimeError("Image generation returned no files")
 
     gen_path = files[0]
     if not os.path.exists(gen_path):
-        raise RuntimeError("生图文件不存在")
+        raise RuntimeError("Generated image file does not exist")
 
     if Image is None:
-        raise RuntimeError("Pillow 不可用，无法做尺寸标准化")
+        raise RuntimeError("Pillow is missing, cannot normalize size")
 
     with Image.open(gen_path) as im:
         im = im.convert("RGBA")
-        # 质量模式优先保细节；快速模式优先速度
+        # Quality mode prioritizes details; fast mode prioritizes speed
         if mode == "fast":
             im = im.resize((gen_width, gen_height), Image.Resampling.LANCZOS)
             if (gen_width, gen_height) != (width, height):
-                # fast 的放大改为 LANCZOS，牺牲少量速度换更高细节
+                # Upscaling for fast changed to LANCZOS, sacrificing slight speed for more detail
                 im = im.resize((width, height), Image.Resampling.LANCZOS)
             im.save(out_webp_path, "WEBP", quality=96, method=6)
         else:
-            # quality：确保输出标准尺寸，同时使用无损 webp，减少压缩损失
+            # quality: ensure standard output size and use lossless webp to reduce compression loss
             if im.size != (width, height):
                 im = im.resize((width, height), Image.Resampling.LANCZOS)
             im.save(out_webp_path, "WEBP", lossless=True, quality=100, method=6)
@@ -852,7 +852,7 @@ def get_agents():
         auth_expires_at_str = a.get("authExpiresAt")
         auth_status = a.get("authStatus", "pending")
 
-        # 1) 超时未批准自动 leave
+        # 1) Timeout unapproved auto leave
         if auth_status == "pending" and auth_expires_at_str:
             try:
                 auth_expires_at = datetime.fromisoformat(auth_expires_at_str)
@@ -869,13 +869,13 @@ def get_agents():
             except Exception:
                 pass
 
-        # 2) 超时未推送自动离线（超过5分钟）
+        # 2) Timeout without push auto offline (over 5 minutes)
         last_push_at_str = a.get("lastPushAt")
         if auth_status == "approved" and last_push_at_str:
             try:
                 last_push_at = datetime.fromisoformat(last_push_at_str)
                 age = (now - last_push_at).total_seconds()
-                if age > 300:  # 5分钟无推送自动离线
+                if age > 300:  # 5 mins without push auto offline
                     a["authStatus"] = "offline"
             except Exception:
                 pass
@@ -895,16 +895,16 @@ def agent_approve():
         data = request.get_json()
         agent_id = (data.get("agentId") or "").strip()
         if not agent_id:
-            return jsonify({"ok": False, "msg": "缺少 agentId"}), 400
+            return jsonify({"ok": False, "msg": "Missing agentId"}), 400
 
         agents = load_agents_state()
         target = next((a for a in agents if a.get("agentId") == agent_id and not a.get("isMain")), None)
         if not target:
-            return jsonify({"ok": False, "msg": "未找到 agent"}), 404
+            return jsonify({"ok": False, "msg": "Agent not found"}), 404
 
         target["authStatus"] = "approved"
         target["authApprovedAt"] = datetime.now().isoformat()
-        target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()  # 默认授权24h
+        target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()  # Default authorization 24h
 
         save_agents_state(agents)
         return jsonify({"ok": True, "agentId": agent_id, "authStatus": "approved"})
@@ -919,12 +919,12 @@ def agent_reject():
         data = request.get_json()
         agent_id = (data.get("agentId") or "").strip()
         if not agent_id:
-            return jsonify({"ok": False, "msg": "缺少 agentId"}), 400
+            return jsonify({"ok": False, "msg": "Missing agentId"}), 400
 
         agents = load_agents_state()
         target = next((a for a in agents if a.get("agentId") == agent_id and not a.get("isMain")), None)
         if not target:
-            return jsonify({"ok": False, "msg": "未找到 agent"}), 404
+            return jsonify({"ok": False, "msg": "Agent not found"}), 404
 
         target["authStatus"] = "rejected"
         target["authRejectedAt"] = datetime.now().isoformat()
@@ -956,7 +956,7 @@ def join_agent():
     try:
         data = request.get_json()
         if not isinstance(data, dict) or not data.get("name"):
-            return jsonify({"ok": False, "msg": "请提供名字"}), 400
+            return jsonify({"ok": False, "msg": "Please provide a name"}), 400
 
         name = data["name"].strip()
         state = data.get("state", "idle")
@@ -967,20 +967,20 @@ def join_agent():
         state = normalize_agent_state(state)
 
         if not join_key:
-            return jsonify({"ok": False, "msg": "请提供接入密钥"}), 400
+            return jsonify({"ok": False, "msg": "Please provide a join key"}), 400
 
         keys_data = load_join_keys()
         key_item = next((k for k in keys_data.get("keys", []) if k.get("key") == join_key), None)
         if not key_item:
-            return jsonify({"ok": False, "msg": "接入密钥无效"}), 403
-        # key 可复用：不再因为 used=true 拒绝
+            return jsonify({"ok": False, "msg": "Join key is invalid"}), 403
+        # Key can be reused: don't reject on used=true
 
         with join_lock:
-            # 在锁内重新读取，避免并发请求都基于同一旧快照通过校验
+            # Re-read within lock to avoid concurrent requests passing validation based on same stale snapshot
             keys_data = load_join_keys()
             key_item = next((k for k in keys_data.get("keys", []) if k.get("key") == join_key), None)
             if not key_item:
-                return jsonify({"ok": False, "msg": "接入密钥无效"}), 403
+                return jsonify({"ok": False, "msg": "Join key is invalid"}), 403
 
             # Key-level expiration check
             key_expires_at_str = key_item.get("expiresAt")
@@ -988,14 +988,14 @@ def join_agent():
                 try:
                     key_expires_at = datetime.fromisoformat(key_expires_at_str)
                     if datetime.now() > key_expires_at:
-                        return jsonify({"ok": False, "msg": "该接入密钥已过期，活动已结束 🎉"}), 403
+                        return jsonify({"ok": False, "msg": "This join key has expired, the event has ended 🎉"}), 403
                 except Exception:
                     pass
 
             agents = load_agents_state()
 
-            # 并发上限：同一个 key “同时在线”最多 3 个。
-            # 在线判定：lastPushAt/updated_at 在 5 分钟内；否则视为 offline，不计入并发。
+            # Concurrency limit: same key max 3 'online' parallelly.
+            # Online check: lastPushAt/updated_at within 5 mins; otherwise treat as offline and don't count towards limit.
             now = datetime.now()
             existing = next((a for a in agents if a.get("name") == name and not a.get("isMain")), None)
             existing_id = existing.get("agentId") if existing else None
@@ -1040,7 +1040,7 @@ def join_agent():
 
             if active_count >= max_concurrent:
                 save_agents_state(agents)
-                return jsonify({"ok": False, "msg": f"该接入密钥当前并发已达上限（{max_concurrent}），请稍后或换另一个 key"}), 429
+                return jsonify({"ok": False, "msg": f"The join key has reached concurrency limit ({max_concurrent}), try later or use another key"}), 429
 
             if existing:
                 existing["state"] = state
@@ -1052,7 +1052,7 @@ def join_agent():
                 existing["authStatus"] = "approved"
                 existing["authApprovedAt"] = datetime.now().isoformat()
                 existing["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()
-                existing["lastPushAt"] = datetime.now().isoformat()  # join 视为上线，纳入并发/离线判定
+                existing["lastPushAt"] = datetime.now().isoformat()  # Treat join as online, include in concurrency/offline check
                 if not existing.get("avatar"):
                     import random
                     existing["avatar"] = random.choice(["guest_role_1", "guest_role_2", "guest_role_3", "guest_role_4", "guest_role_5", "guest_role_6"])
@@ -1085,12 +1085,12 @@ def join_agent():
             key_item["usedAt"] = datetime.now().isoformat()
             key_item["reusable"] = True
 
-            # 拿到有效 key 直接批准，不再等待主人手动点击
-            # （状态已在上面 existing/new 分支写入）
+            # Valid key gets auto-approved, no need to wait for manual owner click
+            # (status has been written in existing/new branch above)
             save_agents_state(agents)
             save_join_keys(keys_data)
 
-        return jsonify({"ok": True, "agentId": agent_id, "authStatus": "approved", "nextStep": "已自动批准，立即开始推送状态"})
+        return jsonify({"ok": True, "agentId": agent_id, "authStatus": "approved", "nextStep": "Auto-approved, starting status push immediately"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1109,7 +1109,7 @@ def leave_agent():
         agent_id = (data.get("agentId") or "").strip()
         name = (data.get("name") or "").strip()
         if not agent_id and not name:
-            return jsonify({"ok": False, "msg": "请提供 agentId 或名字"}), 400
+            return jsonify({"ok": False, "msg": "Please provide an agentId or name"}), 400
 
         agents = load_agents_state()
 
@@ -1121,7 +1121,7 @@ def leave_agent():
             target = next((a for a in agents if a.get("name") == name and not a.get("isMain")), None)
 
         if not target:
-            return jsonify({"ok": False, "msg": "没有找到要离开的 agent"}), 404
+            return jsonify({"ok": False, "msg": "Agent to leave not found"}), 404
 
         join_key = target.get("joinKey")
         new_agents = [a for a in agents if a.get("isMain") or a.get("agentId") != target.get("agentId")]
@@ -1177,14 +1177,14 @@ def agent_push():
         name = (data.get("name") or "").strip()
 
         if not agent_id or not join_key or not state:
-            return jsonify({"ok": False, "msg": "缺少 agentId/joinKey/state"}), 400
+            return jsonify({"ok": False, "msg": "Missing agentId/joinKey/state"}), 400
 
         state = normalize_agent_state(state)
 
         keys_data = load_join_keys()
         key_item = next((k for k in keys_data.get("keys", []) if k.get("key") == join_key), None)
         if not key_item:
-            return jsonify({"ok": False, "msg": "joinKey 无效"}), 403
+            return jsonify({"ok": False, "msg": "joinKey is invalid"}), 403
 
         # Key-level expiration check
         key_expires_at_str = key_item.get("expiresAt")
@@ -1192,7 +1192,7 @@ def agent_push():
             try:
                 key_expires_at = datetime.fromisoformat(key_expires_at_str)
                 if datetime.now() > key_expires_at:
-                    return jsonify({"ok": False, "msg": "该接入密钥已过期，活动已结束 🎉"}), 403
+                    return jsonify({"ok": False, "msg": "This join key has expired, the event has ended 🎉"}), 403
             except Exception:
                 pass
 
@@ -1200,21 +1200,21 @@ def agent_push():
         agents = load_agents_state()
         target = next((a for a in agents if a.get("agentId") == agent_id and not a.get("isMain")), None)
         if not target:
-            return jsonify({"ok": False, "msg": "agent 未注册，请先 join"}), 404
+            return jsonify({"ok": False, "msg": "Agent not registered, please join first"}), 404
 
         # Auth check: only approved agents can push.
         # Note: "offline" is a presence state (stale), not a revoked authorization.
         # Allow offline agents to resume pushing and auto-promote them back to approved.
         auth_status = target.get("authStatus", "pending")
         if auth_status not in {"approved", "offline"}:
-            return jsonify({"ok": False, "msg": "agent 未获授权，请等待主人批准"}), 403
+            return jsonify({"ok": False, "msg": "Agent not authorized, please wait for owner's approval"}), 403
         if auth_status == "offline":
             target["authStatus"] = "approved"
             target["authApprovedAt"] = datetime.now().isoformat()
             target["authExpiresAt"] = (datetime.now() + timedelta(hours=24)).isoformat()
 
         if target.get("joinKey") != join_key:
-            return jsonify({"ok": False, "msg": "joinKey 不匹配"}), 403
+            return jsonify({"ok": False, "msg": "joinKey does not match"}), 403
 
         target["state"] = state
         target["detail"] = detail
@@ -1243,9 +1243,9 @@ def health():
 
 @app.route("/yesterday-memo", methods=["GET"])
 def get_yesterday_memo():
-    """获取昨日小日记"""
+    """Get yesterday's memo"""
     try:
-        # 先尝试找昨天的文件
+        # Try finding yesterday's file first
         yesterday_str = get_yesterday_date_str()
         yesterday_file = os.path.join(MEMORY_DIR, f"{yesterday_str}.md")
         
@@ -1255,12 +1255,12 @@ def get_yesterday_memo():
         if os.path.exists(yesterday_file):
             target_file = yesterday_file
         else:
-            # 如果昨天没有，找最近的一天
+            # If missing yesterday, find the closest day
             if os.path.exists(MEMORY_DIR):
                 files = [f for f in os.listdir(MEMORY_DIR) if f.endswith(".md") and re.match(r"\d{4}-\d{2}-\d{2}\.md", f)]
                 if files:
                     files.sort(reverse=True)
-                    # 跳过今天的（如果存在）
+                    # Skip today (if it exists)
                     today_str = datetime.now().strftime("%Y-%m-%d")
                     for f in files:
                         if f != f"{today_str}.md":
@@ -1278,7 +1278,7 @@ def get_yesterday_memo():
         else:
             return jsonify({
                 "success": False,
-                "msg": "没有找到昨日日记"
+                "msg": "Could not find yesterday's memo"
             })
     except Exception as e:
         return jsonify({
@@ -1311,7 +1311,7 @@ def set_state_endpoint():
 @app.route("/assets/template.zip", methods=["GET"])
 def assets_template_download():
     if not os.path.exists(ASSET_TEMPLATE_ZIP):
-        return jsonify({"ok": False, "msg": "模板包不存在，请先生成"}), 404
+        return jsonify({"ok": False, "msg": "Template package does not exist, please generate it first"}), 404
     return send_from_directory(ROOT_DIR, "assets-replace-template.zip", as_attachment=True)
 
 
@@ -1352,7 +1352,7 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
     try:
         target = FRONTEND_PATH / "office_bg_small.webp"
 
-        # 覆盖前保留最近一次备份
+        # Keep the latest backup before overwriting
         bak = target.with_suffix(target.suffix + ".bak")
         shutil.copy2(target, bak)
 
@@ -1364,7 +1364,7 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
             speed_mode=speed_mode,
         )
 
-        # 每次生成都归档一份历史底图（可回溯风格演化）
+        # Archive a historical base map per generation (for tracking style evolution)
         os.makedirs(BG_HISTORY_DIR, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
         hist_file = os.path.join(BG_HISTORY_DIR, f"office_bg_small-{ts}.webp")
@@ -1380,7 +1380,7 @@ def _bg_generate_worker(task_id: str, custom_prompt: str, speed_mode: str):
                     "size": st.st_size,
                     "history": os.path.relpath(hist_file, ROOT_DIR),
                     "speed_mode": speed_mode,
-                    "msg": "已生成并替换 RPG 房间底图（已自动归档）",
+                    "msg": "RPG room background generated and replaced (auto-archived)",
                 },
             }
     except Exception as e:
@@ -1416,7 +1416,7 @@ def assets_generate_rpg_background():
 
         target = FRONTEND_PATH / "office_bg_small.webp"
         if not target.exists():
-            return jsonify({"ok": False, "msg": "office_bg_small.webp 不存在"}), 404
+            return jsonify({"ok": False, "msg": "office_bg_small.webp does not exist"}), 404
 
         # Pre-flight checks that can fail fast (before spawning thread)
         runtime_cfg = load_runtime_config()
@@ -1424,13 +1424,13 @@ def assets_generate_rpg_background():
         if not api_key:
             return jsonify({"ok": False, "code": "MISSING_API_KEY", "msg": "Missing GEMINI_API_KEY or GOOGLE_API_KEY"}), 400
         if not (os.path.exists(GEMINI_PYTHON) and os.path.exists(GEMINI_SCRIPT)):
-            return jsonify({"ok": False, "msg": "生图脚本环境缺失：gemini-image-generate 未安装"}), 500
+            return jsonify({"ok": False, "msg": "Image generation script environment missing: gemini-image-generate is not installed"}), 500
 
         # Check if another generation is already running
         with _bg_tasks_lock:
             for tid, task in _bg_tasks.items():
                 if task.get("status") == "pending":
-                    return jsonify({"ok": True, "async": True, "task_id": tid, "msg": "已有生图任务进行中，请等待完成"}), 200
+                    return jsonify({"ok": True, "async": True, "task_id": tid, "msg": "There is an existing image generation task running, please wait for it to complete"}), 200
 
         # Create async task
         import string as _string
@@ -1441,7 +1441,7 @@ def assets_generate_rpg_background():
         t = threading.Thread(target=_bg_generate_worker, args=(task_id, custom_prompt, speed_mode), daemon=True)
         t.start()
 
-        return jsonify({"ok": True, "async": True, "task_id": task_id, "msg": "生图任务已启动，请通过 task_id 轮询结果"})
+        return jsonify({"ok": True, "async": True, "task_id": task_id, "msg": "Image generation task started, please poll results via task_id"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1454,14 +1454,14 @@ def assets_generate_rpg_background_poll():
         return guard
     task_id = (request.args.get("task_id") or "").strip()
     if not task_id:
-        return jsonify({"ok": False, "msg": "缺少 task_id"}), 400
+        return jsonify({"ok": False, "msg": "Missing task_id"}), 400
     with _bg_tasks_lock:
         task = _bg_tasks.get(task_id)
     if not task:
-        return jsonify({"ok": False, "msg": "任务不存在"}), 404
+        return jsonify({"ok": False, "msg": "Task does not exist"}), 404
     status = task.get("status", "pending")
     if status == "pending":
-        return jsonify({"ok": True, "status": "pending", "msg": "生图进行中..."})
+        return jsonify({"ok": True, "status": "pending", "msg": "Image generation in progress..."})
     elif status == "done":
         # Clean up task after delivering result
         with _bg_tasks_lock:
@@ -1484,15 +1484,15 @@ def assets_restore_reference_background():
     try:
         target = FRONTEND_PATH / "office_bg_small.webp"
         if not target.exists():
-            return jsonify({"ok": False, "msg": "office_bg_small.webp 不存在"}), 404
+            return jsonify({"ok": False, "msg": "office_bg_small.webp does not exist"}), 404
         if not os.path.exists(ROOM_REFERENCE_IMAGE):
-            return jsonify({"ok": False, "msg": "参考图不存在"}), 404
+            return jsonify({"ok": False, "msg": "Reference image does not exist"}), 404
 
-        # 备份当前底图
+        # Backup current base map
         bak = target.with_suffix(target.suffix + ".bak")
         shutil.copy2(target, bak)
 
-        # 快速路径：若参考图已是 1280x720 的 webp，直接拷贝（秒级）
+        # Fast path: if reference image is a 1280x720 webp, copy directly (takes seconds)
         ref_ext = os.path.splitext(ROOM_REFERENCE_IMAGE)[1].lower()
         fast_copied = False
         if ref_ext == '.webp':
@@ -1504,10 +1504,10 @@ def assets_restore_reference_background():
             except Exception:
                 fast_copied = False
 
-        # 慢路径：仅在必要时重编码
+        # Slow path: recode only when necessary
         if not fast_copied:
             if Image is None:
-                return jsonify({"ok": False, "msg": "Pillow 不可用"}), 500
+                return jsonify({"ok": False, "msg": "Pillow is missing"}), 500
             with Image.open(ROOM_REFERENCE_IMAGE) as im:
                 im = im.convert("RGBA").resize((1280, 720), Image.Resampling.LANCZOS)
                 im.save(target, "WEBP", quality=92, method=6)
@@ -1517,7 +1517,7 @@ def assets_restore_reference_background():
             "ok": True,
             "path": "office_bg_small.webp",
             "size": st.st_size,
-            "msg": "已恢复初始底图",
+            "msg": "Initial base map restored",
         })
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
@@ -1532,10 +1532,10 @@ def assets_restore_last_generated_background():
     try:
         target = FRONTEND_PATH / "office_bg_small.webp"
         if not target.exists():
-            return jsonify({"ok": False, "msg": "office_bg_small.webp 不存在"}), 404
+            return jsonify({"ok": False, "msg": "office_bg_small.webp does not exist"}), 404
 
         if not os.path.isdir(BG_HISTORY_DIR):
-            return jsonify({"ok": False, "msg": "暂无历史底图"}), 404
+            return jsonify({"ok": False, "msg": "No historical base maps available"}), 404
 
         files = [
             os.path.join(BG_HISTORY_DIR, x)
@@ -1543,7 +1543,7 @@ def assets_restore_last_generated_background():
             if x.startswith("office_bg_small-") and x.endswith(".webp")
         ]
         if not files:
-            return jsonify({"ok": False, "msg": "暂无历史底图"}), 404
+            return jsonify({"ok": False, "msg": "No historical base maps available"}), 404
 
         latest = max(files, key=lambda p: os.path.getmtime(p))
 
@@ -1557,7 +1557,7 @@ def assets_restore_last_generated_background():
             "path": "office_bg_small.webp",
             "size": st.st_size,
             "from": os.path.relpath(latest, ROOT_DIR),
-            "msg": "已回退到最近一次生成底图",
+            "msg": "Reverted to the last generated base map",
         })
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
@@ -1609,7 +1609,7 @@ def assets_home_favorites_save_current():
     try:
         src = FRONTEND_PATH / "office_bg_small.webp"
         if not src.exists():
-            return jsonify({"ok": False, "msg": "office_bg_small.webp 不存在"}), 404
+            return jsonify({"ok": False, "msg": "office_bg_small.webp does not exist"}), 404
 
         _ensure_home_favorites_index()
         ts = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -1626,7 +1626,7 @@ def assets_home_favorites_save_current():
             "created_at": datetime.now().isoformat(timespec="seconds"),
         })
 
-        # 控制收藏数量上限，清理最旧项
+        # Control favorites limit, cleanup oldest items
         if len(items) > HOME_FAVORITES_MAX:
             extra = items[HOME_FAVORITES_MAX:]
             items = items[:HOME_FAVORITES_MAX]
@@ -1640,7 +1640,7 @@ def assets_home_favorites_save_current():
 
         idx["items"] = items
         _save_home_favorites_index(idx)
-        return jsonify({"ok": True, "id": item_id, "path": os.path.relpath(dst, ROOT_DIR), "msg": "已收藏当前地图"})
+        return jsonify({"ok": True, "id": item_id, "path": os.path.relpath(dst, ROOT_DIR), "msg": "Current map bookmarked"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1654,13 +1654,13 @@ def assets_home_favorites_delete():
         data = request.get_json(silent=True) or {}
         item_id = (data.get("id") or "").strip()
         if not item_id:
-            return jsonify({"ok": False, "msg": "缺少 id"}), 400
+            return jsonify({"ok": False, "msg": "Missing id"}), 400
 
         idx = _load_home_favorites_index()
         items = idx.get("items") or []
         hit = next((x for x in items if (x.get("id") or "") == item_id), None)
         if not hit:
-            return jsonify({"ok": False, "msg": "收藏项不存在"}), 404
+            return jsonify({"ok": False, "msg": "Bookmark does not exist"}), 404
 
         rel = hit.get("path") or ""
         abs_path = os.path.join(ROOT_DIR, rel)
@@ -1672,7 +1672,7 @@ def assets_home_favorites_delete():
 
         idx["items"] = [x for x in items if (x.get("id") or "") != item_id]
         _save_home_favorites_index(idx)
-        return jsonify({"ok": True, "id": item_id, "msg": "已删除收藏"})
+        return jsonify({"ok": True, "id": item_id, "msg": "Bookmark deleted"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1686,28 +1686,28 @@ def assets_home_favorites_apply():
         data = request.get_json(silent=True) or {}
         item_id = (data.get("id") or "").strip()
         if not item_id:
-            return jsonify({"ok": False, "msg": "缺少 id"}), 400
+            return jsonify({"ok": False, "msg": "Missing id"}), 400
 
         idx = _load_home_favorites_index()
         items = idx.get("items") or []
         hit = next((x for x in items if (x.get("id") or "") == item_id), None)
         if not hit:
-            return jsonify({"ok": False, "msg": "收藏项不存在"}), 404
+            return jsonify({"ok": False, "msg": "Bookmark does not exist"}), 404
 
         src = os.path.join(ROOT_DIR, hit.get("path") or "")
         if not os.path.exists(src):
-            return jsonify({"ok": False, "msg": "收藏文件不存在"}), 404
+            return jsonify({"ok": False, "msg": "Bookmark file does not exist"}), 404
 
         target = FRONTEND_PATH / "office_bg_small.webp"
         if not target.exists():
-            return jsonify({"ok": False, "msg": "office_bg_small.webp 不存在"}), 404
+            return jsonify({"ok": False, "msg": "office_bg_small.webp does not exist"}), 404
 
         bak = target.with_suffix(target.suffix + ".bak")
         shutil.copy2(str(target), str(bak))
         shutil.copy2(src, str(target))
 
         st = target.stat()
-        return jsonify({"ok": True, "path": "office_bg_small.webp", "size": st.st_size, "from": hit.get("path"), "msg": "已应用收藏地图"})
+        return jsonify({"ok": True, "path": "office_bg_small.webp", "size": st.st_size, "from": hit.get("path"), "msg": "Bookmarked map applied"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1719,8 +1719,8 @@ def assets_auth():
         pwd = (data.get("password") or "").strip()
         if pwd and pwd == ASSET_DRAWER_PASS_DEFAULT:
             session["asset_editor_authed"] = True
-            return jsonify({"ok": True, "msg": "认证成功"})
-        return jsonify({"ok": False, "msg": "验证码错误"}), 401
+            return jsonify({"ok": True, "msg": "Authentication successful"})
+        return jsonify({"ok": False, "msg": "Invalid auth code"}), 401
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1757,9 +1757,9 @@ def assets_positions_set():
         y = data.get("y")
         scale = data.get("scale")
         if not key:
-            return jsonify({"ok": False, "msg": "缺少 key"}), 400
+            return jsonify({"ok": False, "msg": "Missing key"}), 400
         if x is None or y is None:
-            return jsonify({"ok": False, "msg": "缺少 x/y"}), 400
+            return jsonify({"ok": False, "msg": "Missing x/y"}), 400
         x = float(x)
         y = float(y)
         if scale is None:
@@ -1797,9 +1797,9 @@ def assets_defaults_set():
         y = data.get("y")
         scale = data.get("scale")
         if not key:
-            return jsonify({"ok": False, "msg": "缺少 key"}), 400
+            return jsonify({"ok": False, "msg": "Missing key"}), 400
         if x is None or y is None:
-            return jsonify({"ok": False, "msg": "缺少 x/y"}), 400
+            return jsonify({"ok": False, "msg": "Missing x/y"}), 400
         x = float(x)
         y = float(y)
         if scale is None:
@@ -1846,7 +1846,7 @@ def gemini_config_set():
         if api_key:
             payload["gemini_api_key"] = api_key
         save_runtime_config(payload)
-        return jsonify({"ok": True, "msg": "Gemini 配置已保存"})
+        return jsonify({"ok": True, "msg": "Gemini config saved"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1860,30 +1860,30 @@ def assets_restore_default():
         data = request.get_json(silent=True) or {}
         rel_path = (data.get("path") or "").strip().lstrip("/")
         if not rel_path:
-            return jsonify({"ok": False, "msg": "缺少 path"}), 400
+            return jsonify({"ok": False, "msg": "Missing path"}), 400
 
         target = (FRONTEND_PATH / rel_path).resolve()
         try:
             target.relative_to(FRONTEND_PATH.resolve())
         except Exception:
-            return jsonify({"ok": False, "msg": "非法 path"}), 400
+            return jsonify({"ok": False, "msg": "Invalid path"}), 400
 
         if not target.exists():
-            return jsonify({"ok": False, "msg": "目标文件不存在"}), 404
+            return jsonify({"ok": False, "msg": "Target file does not exist"}), 404
 
         root, ext = os.path.splitext(str(target))
         default_path = root + ext + ".default"
         if not os.path.exists(default_path):
-            return jsonify({"ok": False, "msg": "未找到默认资产快照"}), 404
+            return jsonify({"ok": False, "msg": "Default asset snapshot not found"}), 404
 
-        # 回滚前保留上一版
+        # Keep previous version before rollback
         bak = str(target) + ".bak"
         if os.path.exists(str(target)):
             shutil.copy2(str(target), bak)
 
         shutil.copy2(default_path, str(target))
         st = os.stat(str(target))
-        return jsonify({"ok": True, "path": rel_path, "size": st.st_size, "msg": "已重置为默认资产"})
+        return jsonify({"ok": True, "path": rel_path, "size": st.st_size, "msg": "Reset to default asset"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1897,22 +1897,22 @@ def assets_restore_prev():
         data = request.get_json(silent=True) or {}
         rel_path = (data.get("path") or "").strip().lstrip("/")
         if not rel_path:
-            return jsonify({"ok": False, "msg": "缺少 path"}), 400
+            return jsonify({"ok": False, "msg": "Missing path"}), 400
 
         target = (FRONTEND_PATH / rel_path).resolve()
         try:
             target.relative_to(FRONTEND_PATH.resolve())
         except Exception:
-            return jsonify({"ok": False, "msg": "非法 path"}), 400
+            return jsonify({"ok": False, "msg": "Invalid path"}), 400
 
         bak = str(target) + ".bak"
         if not os.path.exists(bak):
-            return jsonify({"ok": False, "msg": "未找到上一版备份"}), 404
+            return jsonify({"ok": False, "msg": "Previous version backup not found"}), 404
 
         shutil.copy2(str(target), bak + ".tmp") if os.path.exists(str(target)) else None
         shutil.copy2(bak, str(target))
         st = os.stat(str(target))
-        return jsonify({"ok": True, "path": rel_path, "size": st.st_size, "msg": "已回退到上一版"})
+        return jsonify({"ok": True, "path": rel_path, "size": st.st_size, "msg": "Reverted to previous version"})
     except Exception as e:
         return jsonify({"ok": False, "msg": str(e)}), 500
 
@@ -1928,23 +1928,23 @@ def assets_upload():
         f = request.files.get("file")
 
         if not rel_path or f is None:
-            return jsonify({"ok": False, "msg": "缺少 path 或 file"}), 400
+            return jsonify({"ok": False, "msg": "Missing path or file"}), 400
 
         target = (FRONTEND_PATH / rel_path).resolve()
         try:
             target.relative_to(FRONTEND_PATH.resolve())
         except Exception:
-            return jsonify({"ok": False, "msg": "非法 path"}), 400
+            return jsonify({"ok": False, "msg": "Invalid path"}), 400
 
         if target.suffix.lower() not in ASSET_ALLOWED_EXTS:
-            return jsonify({"ok": False, "msg": "仅允许上传图片/美术资源类型"}), 400
+            return jsonify({"ok": False, "msg": "Only image/art asset uploads allowed"}), 400
 
         if not target.exists():
-            return jsonify({"ok": False, "msg": "目标文件不存在，请先从 /assets/list 选择 path"}), 404
+            return jsonify({"ok": False, "msg": "Target file does not exist, please select path from /assets/list first"}), 404
 
         target.parent.mkdir(parents=True, exist_ok=True)
 
-        # 首次上传前固化默认资产快照，供“重置为默认资产”使用
+        # Freeze default asset snapshot before first upload for 'reset to default asset' usage
         default_snap = Path(str(target) + ".default")
         if not default_snap.exists():
             try:
@@ -1968,7 +1968,7 @@ def assets_upload():
                 frame_w = int(request.form.get("frame_w") or (in_w or 64))
                 frame_h = int(request.form.get("frame_h") or (in_h or 64))
 
-                # 如果是静态图上传到精灵表目标，按网格切片而不是整图覆盖
+                # If uploading static image to spritesheet target, slice via grid instead of full overwrite
                 if not (ext_name.endswith(".gif") or ext_name.endswith(".webp")) and Image is not None:
                     try:
                         with Image.open(src_path) as sim:
@@ -1981,10 +1981,10 @@ def assets_upload():
                             sheet_w = cols * frame_w
                             sheet_h = rows * frame_h
                             if sheet_w <= 0 or sheet_h <= 0:
-                                raise RuntimeError("静态图尺寸与帧规格不匹配")
+                                raise RuntimeError("Static image size does not match frame spec")
 
                             cropped = sim.crop((0, 0, sheet_w, sheet_h))
-                            # 目标是 webp 仍按无损保存，避免像素损失
+                            # If target is webp, save lossless to avoid pixel loss
                             if target.suffix.lower() == ".webp":
                                 cropped.save(str(target), "WEBP", lossless=True, quality=100, method=6)
                             else:
@@ -2011,7 +2011,7 @@ def assets_upload():
                     finally:
                         pass
 
-                # 默认：优先保留输入帧尺寸；若前端传了强制值则按前端。
+                # Default: prioritize input frame size; if front-end passed a forced value, use it.
                 preserve_original_val = request.form.get("preserve_original")
                 if preserve_original_val is None:
                     preserve_original = True

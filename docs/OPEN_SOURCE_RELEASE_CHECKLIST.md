@@ -1,39 +1,39 @@
-# Star Office UI — 开源发布准备清单（仅准备，不上传）
+# Star Office UI — Open Source Release Checklist (Preparation Only, Do Not Upload)
 
-## 0. 当前目标
-- 本文档用于“发布前准备”，不执行实际上传。
-- 所有 push 行为需海辛最终明确批准。
+## 0. Current Goal
+- This document is for "pre-release preparation", do not perform actual uploads.
+- All push actions require explicit final approval from Hyacinth.
 
-## 1. 隐私与安全审查结果（当前仓库）
+## 1. Privacy and Security Review Results (Current Repository)
 
-### 发现高风险文件（必须排除）
-- 运行日志：
+### Identified High-Risk Files (Must be excluded)
+- Runtime Logs:
   - `cloudflared.out`
   - `cloudflared-named.out`
   - `cloudflared-quick.out`
   - `healthcheck.log`
   - `backend.log`
   - `backend/backend.out`
-- 运行状态：
+- Runtime State:
   - `state.json`
   - `agents-state.json`
   - `backend/backend.pid`
-- 备份/历史文件：
+- Backup/Historical Files:
   - `index.html.backup.*`
   - `index.html.original`
-  - `*.backup*` 目录与文件
-- 本地虚拟环境与缓存：
+  - `*.backup*` directories and files
+- Local Virtual Envs and Caches:
   - `.venv/`
   - `__pycache__/`
 
-### 发现潜在敏感内容
-- 代码内含绝对路径 `/root/...`（建议改为相对路径或环境变量）
-- 文档与脚本含私有域名 `office.example.com`（可保留为示例，但建议改成占位域名）
+### Identified Potentially Sensitive Content
+- Absolute paths in code `/root/...` (Recommend changing to relative paths or environment variables)
+- Private domains in docs and scripts like `office.example.com` (Can be kept as an example, but suggest using placeholder domains)
 
-## 2. 必改项（提交前）
+## 2. Required Modifications (Before Commit)
 
-### A. .gitignore（需补齐）
-建议新增：
+### A. .gitignore (Should be updated)
+Suggested additions:
 ```
 *.log
 *.out
@@ -48,17 +48,17 @@ __pycache__/
 venv/
 ```
 
-### B. README 版权声明（必须新增）
-新增“美术资产版权与使用限制”章节：
-- 代码按开源协议（如 MIT）
-- 美术素材归原作者/工作室所有
-- 素材仅供学习/演示，**禁止商用**
+### B. README Copyright Notice (Must be added)
+Add an "Art Asset Copyright and Usage Restrictions" section:
+- Code follows open-source license (e.g., MIT)
+- Art assets belong to original authors/studios
+- Assets are for learning/demonstration purposes only, **commercial use is prohibited**
 
-### C. 发布目录瘦身
-- 清理运行日志、运行态文件、备份文件
-- 仅保留“可运行最小集 + 必要素材 + 文档”
+### C. Slimming Down Release Directory
+- Clean up runtime logs, state files, and backups
+- Only keep "minimum runnable set + necessary assets + docs"
 
-## 3. 准备中的发布包建议结构
+## 3. Suggested Structure for Release Package in Preparation
 ```
 star-office-ui/
   backend/
@@ -67,9 +67,9 @@ star-office-ui/
     run.sh
   frontend/
     index.html
-    game.js (若仍需要)
+    game.js (If still needed)
     layout.js
-    assets/* (仅可公开素材)
+    assets/* (Publicly releasable assets only)
   office-agent-push.py
   set_state.py
   state.sample.json
@@ -79,13 +79,13 @@ star-office-ui/
   docs/
 ```
 
-## 4. 发布前最终核对（给海辛确认）
-- [ ] 是否保留私有域名示例（`office.example.com`）
-- [ ] 哪些美术资源允许公开（逐项确认）
-- [ ] README 非商用声明是否满足你的预期措辞
-- [ ] 是否需要将“阿文龙虾联调脚本”单独放 examples 目录
+## 4. Final Pre-Release Check (For Hyacinth's Confirmation)
+- [ ] Keep private domain example (`office.example.com`)?
+- [ ] Which art resources are allowed to be public (confirm item-by-item)?
+- [ ] Does the README "non-commercial" disclaimer wording meet expectations?
+- [ ] Should the "Arwen Lobster Integration Script" be placed in an `examples` directory separately?
 
-## 5. 当前状态
-- ✅ 文档准备完成（总结、功能说明、Skill v2、发布检查清单）
-- ⏳ 等待海辛确认“公开素材范围 + 声明文案 + 是否开始执行打包清理脚本”
-- ⛔ 尚未执行 GitHub 上传
+## 5. Current Status
+- ✅ Documentation preparation completed (summary, feature explanation, Skill v2, release checklist)
+- ⏳ Waiting for Hyacinth to confirm "public asset scope + disclaimer copy + whether to execute packaging and cleanup script"
+- ⛔ Has not been uploaded to GitHub

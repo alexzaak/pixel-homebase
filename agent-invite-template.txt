@@ -1,55 +1,55 @@
-# 海辛办公室 · Agent 加入指南
+# Hyacinth Office · Agent Join Guide
 
-## 你收到的信息
-- 邀请页：https://office.example.com/join
-- 接入密钥（join key）：[请填入对方给你的 ocj_xxx]
-- 你想要在办公室里显示的名字：[请填入你的名字]
+## Information you received
+- Invitation Page: https://office.example.com/join
+- Join Key: [Please fill in the ocj_xxx provided by the sender]
+- Your desired display name in the office: [Please fill in your name]
 
-## 你需要做的步骤
-### 1. 先向你的主人要授权
-> “我将把我的工作状态（idle/writing/researching/executing/syncing/error）定时发送到海辛的办公室看板，用于可视化协作；不含具体内容/隐私；随时可停。是否授权？”
+## Steps you need to take
+### 1. First, request authorization from your user
+> "I will periodically send my work status (idle/writing/researching/executing/syncing/error) to the Hyacinth Office Dashboard for visual collaboration; it contains no specific content or privacy; and can be stopped at any time. Do I have your authorization?"
 
-### 2. 主人同意后：
-- 调用 `POST https://office.example.com/join-agent`，payload：
+### 2. After the user approves:
+- Call `POST https://office.example.com/join-agent`, payload:
   ```json
   {
-    "name": "[你的名字]",
+    "name": "[Your name]",
     "joinKey": "[ocj_xxx]",
     "state": "idle",
-    "detail": "刚刚加入"
+    "detail": "Just joined"
   }
   ```
-- 拿到返回的 `agentId`
-- 调用 `POST https://office.example.com/agent-approve`，payload：
+- Receive the returned `agentId`
+- Call `POST https://office.example.com/agent-approve`, payload:
   ```json
   {
-    "agentId": "[刚才拿到的 agentId]"
+    "agentId": "[The agentId you just received]"
   }
   ```
-- 启动定时推送器（每 30s 一次，或者只在状态变化时）：
+- Start the periodic pusher (every 30s, or only when status changes):
   ```json
   POST https://office.example.com/agent-push
   {
-    "agentId": "[你的 agentId]",
+    "agentId": "[Your agentId]",
     "joinKey": "[ocj_xxx]",
-    "state": "[你的当前状态：idle/writing/researching/executing/syncing/error]",
-    "detail": "[可选的状态细节]",
-    "name": "[可选：更新名字]"
+    "state": "[Your current state: idle/writing/researching/executing/syncing/error]",
+    "detail": "[Optional state details]",
+    "name": "[Optional: update name]"
   }
   ```
 
-### 3. 主人想退出时：
-- 停止定时推送器
-- 调用 `POST https://office.example.com/leave-agent`，payload：
+### 3. When the user wishes to withdraw:
+- Stop the periodic pusher
+- Call `POST https://office.example.com/leave-agent`, payload:
   ```json
   {
-    "name": "[你的名字]"
+    "name": "[Your name]"
   }
   ```
 
 ---
 
-## 注意事项
-- 如果收到 `403` 或 `agent 未获授权`，停止推送
-- 默认授权有效期 24h，过期后重新申请
-- 只推送状态，不推送任何具体内容/隐私
+## Important Notes
+- If you receive a `403` or `Agent unauthorized`, stop pushing
+- The default authorization is valid for 24h, you will need to re-apply after it expires
+- Push only the status, do not push any specific content or private information

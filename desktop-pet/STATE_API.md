@@ -1,85 +1,85 @@
-# 桌宠状态对接说明（openclaw 用）
+# Desktop Pet State Integration Guide (for openclaw)
 
-桌宠通过读取 **state.json** 获取当前状态并刷新表现（头顶图标/emoji、气泡文案、角色动画、寻路目标）。openclaw 需要**写入或更新**该文件以驱动桌宠。
-
----
-
-## 1. 文件位置
-
-- **路径**：与桌宠工作目录下的 `state.json`（桌宠启动时会解析项目根目录，即包含 `state.json` 和 `layers/` 的目录）。
-- **格式**：UTF-8 JSON。
+The desktop pet retrieves its current state by reading **state.json** and updates its appearance (overhead icon/emoji, speech bubbles, character animation, pathfinding target). openclaw needs to **write or update** this file to drive the desktop pet.
 
 ---
 
-## 2. state.json 结构
+## 1. File Location
+
+- **Path**: The `state.json` under the desktop pet's working directory (upon startup, it resolves to the project root directory, which contains `state.json` and the `layers/` directory).
+- **Format**: UTF-8 JSON.
+
+---
+
+## 2. state.json Structure
 
 ```json
 {
   "state": "idle",
-  "detail": "可选，状态说明，目前仅用于展示/调试",
+  "detail": "Optional, state description, currently used only for display/debugging",
   "progress": 0.0,
   "updated_at": "2025-02-27T12:00:00Z"
 }
 ```
 
-| 字段         | 类型    | 必填 | 说明 |
-|--------------|---------|------|------|
-| `state`      | string  | 是   | 当前状态，见下表。桌宠每 ~2s 轮询读取。 |
-| `detail`     | string  | 否   | 可选描述，可被后续扩展用于气泡或调试。 |
-| `progress`   | number  | 否   | 0~1，可选进度，可被后续扩展。 |
-| `updated_at` | string  | 否   | ISO8601 时间，可选。 |
+| Field        | Type    | Required | Description |
+|--------------|---------|----------|-------------|
+| `state`      | string  | Yes      | Current state, see table below. The desktop pet polls this every ~2s. |
+| `detail`     | string  | No       | Optional description, can be extended later for speech bubbles or debugging. |
+| `progress`   | number  | No       | 0~1, optional progress, can be extended later. |
+| `updated_at` | string  | No       | ISO8601 time, optional. |
 
-**只有 `state` 会影响桌宠行为**；其余字段可留空或省略。
-
----
-
-## 3. 状态取值（openclaw 应写入的 `state`）
-
-桌宠只认下面这些**标准状态名**（小写）。写别的值会被当成 `idle` 或按别名映射。
-
-| state 值       | 含义           | 桌宠表现概要 |
-|----------------|----------------|--------------|
-| `idle`         | 摸鱼/无任务     | 💤 呼吸动画，随机闲逛 |
-| `writing`      | 写作/记笔记     | Word 图标，走到 writing POI |
-| `receiving`    | 收消息         | Hangouts 图标，走到 receiving POI |
-| `replying`     | 回复消息       | Glovo 图标，走到 replying POI |
-| `researching`  | 调研/查资料     | Google 图标，走到 researching POI |
-| `executing`    | 执行任务/跑任务 | ⚡ emoji，走到 executing POI |
-| `syncing`      | 同步/备份      | ☁️ emoji，走到 syncing POI |
-| `error`        | 出错           | ❗ emoji，走到 error POI |
-
-POI 在 `layers/map.json` 的 `pois` 里配置；状态变化时桌宠会寻路到对应格子。
+**Only the `state` field affects the desktop pet's behavior**; other fields can be left empty or omitted.
 
 ---
 
-## 4. 别名映射（可选）
+## 3. State Values (The `state` openclaw should write)
 
-若 openclaw 侧用不同名字，桌宠前端会先做一次**别名 → 标准状态**的映射，再按上表表现：
+The desktop pet only recognizes the following **standard state names** (lowercase). Writing other values will treat it as `idle` or resolve via alias mapping.
 
-| openclaw 可写的 state | 映射为 |
-|------------------------|--------|
-| `working`              | `writing` |
-| `run`                  | `executing` |
-| `running`              | `executing` |
-| `sync`                 | `syncing` |
-| `research`             | `researching` |
+| state Value      | Meaning           | Desktop Pet Behavior Overview |
+|------------------|-------------------|-------------------------------|
+| `idle`           | Slacking/No task  | 💤 Breathing animation, random wandering |
+| `writing`        | Writing/Notes     | Word icon, walks to writing POI |
+| `receiving`      | Receiving message | Hangouts icon, walks to receiving POI |
+| `replying`       | Replying to msg   | Glovo icon, walks to replying POI |
+| `researching`    | Researching       | Google icon, walks to researching POI |
+| `executing`      | Executing/Running | ⚡️ emoji, walks to executing POI |
+| `syncing`        | Syncing/Backup    | ☁️ emoji, walks to syncing POI |
+| `error`          | Error             | ❗️ emoji, walks to error POI |
 
-未在上述列表中的 `state` 会视为 `idle`。
+POIs are configured in `layers/map.json` under `pois`; when the state changes, the desktop pet will pathfind to the corresponding tile.
 
 ---
 
-## 5. openclaw 需要“跳”什么
+## 4. Alias Mapping (Optional)
 
-- **写 state.json**：在约定目录下创建/覆盖 `state.json`，保证 `state` 为上面 8 个标准状态之一（或 5 个别名之一）。
-- **何时写**：状态变化时写一次即可；桌宠轮询间隔约 2 秒，无需高频写入。
-- **示例**  
-  - 开始写文档：`{ "state": "writing" }`  
-  - 收到消息：`{ "state": "receiving" }`  
-  - 正在回复：`{ "state": "replying" }`  
-  - 查资料：`{ "state": "researching" }`  
-  - 执行任务：`{ "state": "executing" }`  
-  - 同步中：`{ "state": "syncing" }`  
-  - 出错：`{ "state": "error" }`  
-  - 摸鱼/无任务：`{ "state": "idle" }`
+If different names are used on the openclaw side, the desktop pet frontend will first perform an **alias → standard state** mapping, then display the behavior according to the table above:
 
-按上述方式更新 `state.json`，即可与当前桌宠状态和 POI 行为一致。
+| openclaw writable state | Mapped to |
+|-------------------------|-----------|
+| `working`               | `writing` |
+| `run`                   | `executing` |
+| `running`               | `executing` |
+| `sync`                  | `syncing` |
+| `research`              | `researching` |
+
+Any `state` not in the above lists will be treated as `idle`.
+
+---
+
+## 5. What openclaw needs to do
+
+- **Write state.json**: Create or overwrite `state.json` in the agreed directory, ensuring `state` is one of the 8 standard states (or 5 aliases) above.
+- **When to write**: Write once when the state changes; the desktop pet polling interval is about 2 seconds, no need for high-frequency writing.
+- **Examples**
+  - Starts writing doc: `{ "state": "writing" }`
+  - Received message: `{ "state": "receiving" }`
+  - Replying: `{ "state": "replying" }`
+  - Researching: `{ "state": "researching" }`
+  - Executing task: `{ "state": "executing" }`
+  - Syncing: `{ "state": "syncing" }`
+  - Error: `{ "state": "error" }`
+  - Slacking/No task: `{ "state": "idle" }`
+
+By updating `state.json` in this manner, it will sync consistently with the current desktop pet behavior and POIs.

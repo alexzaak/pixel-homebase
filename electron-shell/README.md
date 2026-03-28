@@ -1,17 +1,17 @@
 # Star Desktop Pet (Electron Shell)
 
-这个目录是 Electron 版桌面壳，和现有 Tauri 版并行存在，方便逐步迁移。
+This directory contains the Electron version of the desktop shell, existing alongside the current Tauri version to facilitate gradual migration.
 
-## 已接入能力
+## Integrated Capabilities
 
-- 复用原有前端：`http://127.0.0.1:19000/?desktop=1`
-- 复用 mini 页面：`desktop-pet/src/minimized.html`
-- 启动时自动拉起 Python backend（若未运行）
-- 主窗口 / mini 窗口切换
-- 托盘（menu bar）常驻菜单
-- 通过 preload 注入 `window.__TAURI__` 兼容层，尽量少改现有前端逻辑
+- Reuses existing frontend: `http://127.0.0.1:19000/?desktop=1`
+- Reuses mini page: `desktop-pet/src/minimized.html`
+- Automatically starts Python backend on boot (if not already running)
+- Toggle between Main Window / Mini Window
+- Resident tray (menu bar) menu
+- Injects a `window.__TAURI__` compatibility layer via preload, minimizing required changes to existing frontend logic
 
-## 启动方式
+## Launch Method
 
 ```bash
 cd "/Users/wangzhaohan/Documents/GitHub/Star-Office-UI/electron-shell"
@@ -19,14 +19,14 @@ npm install
 npm run dev
 ```
 
-## 可选环境变量
+## Optional Environment Variables
 
-- `STAR_PROJECT_ROOT`：项目根目录（默认自动探测）
-- `STAR_BACKEND_PYTHON`：后端 Python 可执行路径
-- `STAR_BACKEND_HOST`：后端主机（默认 `127.0.0.1`）
-- `STAR_BACKEND_PORT`：后端端口（默认 `19000`）
+- `STAR_PROJECT_ROOT`: Project root directory (auto-detected by default)
+- `STAR_BACKEND_PYTHON`: Backend Python executable path
+- `STAR_BACKEND_HOST`: Backend host (defaults to `127.0.0.1`)
+- `STAR_BACKEND_PORT`: Backend port (defaults to `19000`)
 
-## 说明
+## Notes
 
-- 当前阶段是“可运行迁移骨架”，目的是先替换桌面容器层。
-- 现有 Tauri 目录不受影响，可随时回滚或并行对比。
+- This is currently a "runnable migration skeleton", aiming to replace the desktop container layer first.
+- The existing Tauri directory remains unaffected, and can be rolled back to or compared in parallel at any time.

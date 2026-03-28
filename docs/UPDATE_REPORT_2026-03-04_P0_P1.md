@@ -1,141 +1,141 @@
-# Star Office UI 更新文档（P0 / P1）
+# Star Office UI Update Document (P0 / P1)
 
-更新时间：2026-03-04
-分支：`feat/office-art-rebuild`
-
----
-
-## 1. 更新目标
-
-本轮更新目标分为两层：
-
-- **P0：安全与可发布性**（防泄漏、防弱配置、上线前可自检）
-- **P1：结构与稳定性优化**（不减功能、提升状态同步与加载体验）
-
-同时处理了线上关键问题：
-
-- 服务偶发 502（进程/服务启动方式不稳定）
-- 角色状态与真实工作状态不一致（尤其“回复结束仍在工位”）
+Update Date: 2026-03-04
+Branch: `feat/office-art-rebuild`
 
 ---
 
-## 2. P0 已完成项
+## 1. Update Goals
 
-### 2.1 后端安全基线加固
+The goals of this update round are divided into two levels:
 
-- 增加生产模式安全校验（弱密钥/弱口令阻止启动）
-- Session Cookie 安全参数加固（HttpOnly / SameSite / Secure）
-- `runtime-config.json` 写入后自动尝试收紧文件权限（`600`）
+- **P0: Security and Releasability** (Prevent leaks, prevent weak configs, self-testable before launch)
+- **P1: Structure and Stability Optimization** (No feature reduction, improve state sync and loading experience)
 
-### 2.2 敏感文件治理
+Simultaneously addressed critical online issues:
 
-- `.gitignore` 补充运行态文件与高风险文件
-- 引入样例文件替代运行态文件：
+- Occasional 502 from service (Unstable process/service startup)
+- Character state inconsistent with real working state (especially "still at desk after concluding reply")
+
+---
+
+## 2. Completed P0 Items
+
+### 2.1 Backend Security Baseline Hardening
+
+- Added production mode security validation (blocks startup on weak secrets/passwords)
+- Session Cookie security parameter hardening (HttpOnly / SameSite / Secure)
+- Automatically attempts to tighten file permissions (`600`) after writing `runtime-config.json`
+
+### 2.2 Sensitive Files Governance
+
+- Supplemented runtime and high-risk files in `.gitignore`
+- Introduced sample files to replace runtime files:
   - `join-keys.sample.json`
   - `.env.example`
-- `join-keys.json` 改为运行时初始化，不再作为仓库内固定配置
+- `join-keys.json` is now initialized at runtime, no longer a fixed config in the repository
 
-### 2.3 上线前安全自检能力
+### 2.3 Pre-launch Security Self-test Capability
 
-- 新增 `scripts/security_check.py`
-- 可检查：
-  - 弱 secret / 弱口令
-  - 风险文件是否被 git 跟踪
-  - 常见敏感 token 模式
+- Added `scripts/security_check.py`
+- Can check:
+  - Weak secret / weak password
+  - Whether risk files are tracked by git
+  - Common sensitive token patterns
 
 ---
 
-## 3. P1 已完成项（不改业务能力）
+## 3. Completed P1 Items (No business capability changes)
 
-### 3.1 后端结构拆分
+### 3.1 Backend Structural Split
 
-在不改变现有 API 行为前提下，把 `backend/app.py` 拆出：
+Without changing existing API behavior, split out `backend/app.py`:
 
 - `backend/security_utils.py`
 - `backend/memo_utils.py`
 - `backend/store_utils.py`
 
-收益：
-- 降低单文件复杂度
-- 降低后续功能改动时的回归风险
-- 提升可读性与维护效率
+Benefits:
+- Reduced single-file complexity
+- Lowered regression risk during later feature changes
+- Improved readability and maintenance efficiency
 
-### 3.2 状态同步修复（核心）
+### 3.2 State Sync Fixes (Core)
 
-- 修复状态源路径优先级（避免读取错误状态文件）
-- 增加 stale 状态自动回 `idle` 机制（避免假工作中）
-- 前端状态轮询改为更快节奏并强制视觉对齐，避免动画卡旧状态
+- Fixed state source path priority (avoiding reading wrong state files)
+- Added automatic fallback to `idle` for stale states (avoiding fake "working" states)
+- Frontend state polling changed to a faster rhythm with forced visual alignment to avoid animations getting stuck on old states
 
-### 3.3 生图模型策略收敛
+### 3.3 Image Generation Model Strategy Convergence
 
-按需求收敛为两种用户模型语义：
+Converged to two user model semantics as required:
 
 - `nanobanana-pro`
 - `nanobanana-2`
 
-并补充 provider 映射与错误细节透出，提升可诊断性。
+And supplemented provider mapping and error detail surfacing to improve diagnosability.
 
-### 3.4 首屏性能与体感优化
+### 3.4 First Screen Performance and Feel Optimization
 
-- 首页 HTML 缓存（后端进程内缓存）
-- 非关键初始化延后（先出画面）
-- 加入画布骨架屏，减少“黑屏 + 长时间加载中”体感
-- 加速 loading overlay 淡出
-
----
-
-## 4. 线上稳定性修复（本轮重点）
-
-### 4.1 502 根因
-
-Cloudflare 正常，但 `18888` 源站进程存在不稳定/启动方式不一致，导致偶发 connection refused。
-
-### 4.2 已处理
-
-- 修复并统一 `star-office-ui.service` 启动方式（systemd 常驻）
-- 清理手工临时启动造成的端口抢占
-- 重启并验证：
-  - `star-office-ui.service` 运行正常
-  - `star-office-push.service` 运行正常
+- Homepage HTML caching (Backend in-process cache)
+- Delayed non-critical initialization (Show screen first)
+- Added canvas skeleton screen to reduce the "black screen + long loading" feel
+- Sped up loading overlay fade-out
 
 ---
 
-## 5. 当前已知风险 / 待跟进
+## 4. Online Stability Fixes (Focus of this round)
 
-1. **状态策略仍需完全事件化**
-   - 目前已大幅收敛误判，但建议后续做单一状态控制器（显式事件优先，彻底禁用隐式推断）
+### 4.1 502 Root Cause
 
-2. **进程模型仍是 Flask 开发服务器**
-   - 当前可用但不理想，后续建议迁移为 gunicorn/uvicorn 等生产进程模型
+Cloudflare is normal, but the `18888` origin process was unstable/inconsistently started, causing occasional connection refused.
 
-3. **动画状态同步仍建议增加端到端回归脚本**
-   - 尤其 writing / syncing / error / idle 切换链路
+### 4.2 Handled
 
----
-
-## 6. 验收建议（人工）
-
-验收地址：`https://simonoffice.hyacinth.im/`
-
-建议至少覆盖：
-
-1. 首页进入速度与骨架屏体验
-2. 状态切换（writing / syncing / error / idle）
-3. 回复结束后是否回到待命区
-4. 生图两入口（搬新家 / 找中介）
-5. 断网或服务短时波动后是否自动恢复
+- Fixed and unified `star-office-ui.service` startup method (systemd resident)
+- Cleaned up port hogging caused by manual temporary starts
+- Restarted and verified:
+  - `star-office-ui.service` running normally
+  - `star-office-push.service` running normally
 
 ---
 
-## 7. 提交范围（摘要）
+## 5. Current Known Risks / To Be Followed Up
 
-本轮主要覆盖：
+1. **State Strategy still needs full Eventualization**
+   - Misjudgments have been vastly reduced, but it is advised to make a single state controller later (explicit events priority, completely disable implicit inference)
 
-- 安全与配置：P0
-- 后端重构：P1
-- 状态同步与动画一致性修复
-- 生图模型策略与错误诊断
-- 加载性能与体验优化
-- systemd 常驻与稳定性修复
+2. **Process Model is still Flask Development Server**
+   - Currently usable but not ideal; recommend migrating to production process models like gunicorn/uvicorn later
 
-如需 PR 附件，可直接将本文件作为“更新说明 / Release Notes”。
+3. **Animation State Sync still advised to add an end-to-end regression script**
+   - Especially the switching link between writing / syncing / error / idle
+
+---
+
+## 6. Acceptance Suggestions (Manual)
+
+Acceptance Address: `https://simonoffice.hyacinth.im/`
+
+Advised to at least cover:
+
+1. Homepage entry speed and skeleton screen experience
+2. State switching (writing / syncing / error / idle)
+3. Whether it returns to the break area after concluding a reply
+4. Both image generation entries (Moving / Finding Realtor)
+5. Whether it auto-recovers after network disconnect or service fluctuation
+
+---
+
+## 7. Commit Scope (Summary)
+
+This round mainly covered:
+
+- Security and config: P0
+- Backend refactoring: P1
+- State sync and animation consistency fixes
+- Image generation model strategy and error diagnosis
+- Load performance and experience optimization
+- systemd resident and stability fixes
+
+If PR attachments are needed, this document can be directly used as "Update Notes / Release Notes".

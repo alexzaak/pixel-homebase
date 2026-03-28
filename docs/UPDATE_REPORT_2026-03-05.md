@@ -1,93 +1,93 @@
-# 更新报告 — 2026-03-05
+# Update Report — 2026-03-05
 
-> 本次更新覆盖 8 个 commit，聚焦「稳定性修复 + 移动端体验 + 安全收尾」。
-
----
-
-## 变更概览
-
-| # | Commit | 分类 | 说明 |
-|---|--------|------|------|
-| 1 | `878793d` | 🐛 fix | 修复 CDN 缓存 404 导致页面无法加载 |
-| 2 | `cc22403` | 🐛 fix | 修复 `fetchStatus()` 中多余的 `else` 块导致 JS 语法错误 |
-| 3 | `103f944` | 🐛 fix | 生图接口改为异步任务模式，避免 Cloudflare 524 超时 |
-| 4 | `ee141de` | 🧹 chore | 清理本地测试时意外提交的文件 |
-| 5 | `83e61ff` | 🧹 chore | 将 `join-keys.json` 加入 `.gitignore`（运行时数据不入库） |
-| 6 | `899f27e` | 🐛 fix | 移动端/iPad 侧边栏修复（遮罩层 + body 滚动锁定 + `100dvh`） |
-| 7 | `5aef430` | 🐛 fix | 移动端 drawer 关闭时完全移出屏幕（`right: -100vw`） |
-| 8 | `02a731e` | ✨ feat | 新增 join key 级别过期时间 + 并发上限支持 |
+> This update covers 8 commits, focusing on "Stability Fixes + Mobile Experience + Security Wrap-up".
 
 ---
 
-## 详细说明
+## Changes Overview
 
-### 1. 修复 CDN 缓存 404（`878793d`）
-
-**问题**：`/static/` 路径下的所有响应（含 404）都被设置了一年长缓存头。Cloudflare 缓存了 `phaser.js` 的 404 响应长达 2.7 天，导致 `office.hyacinth.im` 完全无法加载。
-
-**修复**：
-- `add_no_cache_headers` 仅对 2xx 响应设置长缓存，非 2xx 响应设为 no-cache
-- 给 `phaser.js` 的 `<script>` 标签添加 `?v={{VERSION_TIMESTAMP}}` 缓存破坏参数
-
-### 2. 修复 fetchStatus JS 语法错误（`cc22403`）
-
-**问题**：`fetchStatus()` 函数内 `try/catch` 之间存在一个孤立的 `} else { ... }` 块，破坏了 JS 语法结构，导致浏览器报 `Missing catch or finally after try`，整个页面卡在 loading。
-
-**修复**：移除多余的 `else` 块（其中的打字机逻辑已被前面的 `if/else` 分支覆盖）。
-
-> ⚠️ 此 bug 是 GitHub 上 PR #49、#51、#52 同时在修的问题，三个 PR 现在可以关闭。
-
-### 3. 生图接口异步化（`103f944`）
-
-**问题**：`POST /assets/generate-rpg-background` 是同步的，生图通常需要 30~120 秒。Cloudflare 的代理超时限制为 100 秒（HTTP 524），导致公网用户频繁触发超时。
-
-**修复**：
-- 后端：拆分为 `_bg_generate_worker`（后台线程）+ `POST /assets/generate-rpg-background`（返回 `task_id`）+ `GET /assets/generate-rpg-background/poll`（轮询结果）
-- 前端：新增 `_startAndPollGeneration()` 函数，提交任务后每 3 秒轮询，显示实时等待进度
-- 同时抽取了 `_handleGenError()` 统一错误处理（DRY 优化）
-- 防重入：如果已有生图任务在跑，直接返回已有 `task_id`
-
-### 4-5. 清理与 gitignore（`ee141de` + `83e61ff`）
-
-- 清理了测试时意外提交的文件
-- 将 `join-keys.json` 加入 `.gitignore`（包含密钥数据，不应入库）
-
-### 6-7. 移动端侧边栏修复（`899f27e` + `5aef430`）
-
-**问题**：移动端/iPad 打开资产侧边栏时，背后的页面仍可滚动；关闭侧边栏后 drawer 只偏移 -320px，在宽屏移动设备上仍可见。
-
-**修复**：
-- 新增 `#asset-drawer-backdrop` 遮罩层，点击即关闭 drawer
-- 打开 drawer 时 `body` 加 `drawer-open` class（`overflow:hidden; position:fixed; touch-action:none`）
-- 关闭时恢复 `scrollY` 位置（避免跳顶部）
-- Drawer 关闭状态改为 `right: -100vw`（完全移出视口）
-- 使用 `100dvh` 适配移动端 dynamic viewport
-- 添加 `overscroll-behavior: contain` 防止 drawer 内滚动穿透
-
-### 8. Join Key 级别过期时间（`02a731e`）
-
-**新增功能**：
-- `join-keys.json` 中每个 key 支持 `expiresAt` 字段（ISO 8601 时间戳）
-- `join-agent` 和 `agent-push` 两个端点在执行前都会检查 key 是否过期
-- 过期后返回友好提示："该接入密钥已过期，活动已结束 🎉"
-- 支持 `maxConcurrent` 字段控制同一个 key 的并发在线数
+| # | Commit | Category | Description |
+|---|--------|----------|-------------|
+| 1 | `878793d` | 🐛 fix | Fixed CDN caching 404 causing page failures |
+| 2 | `cc22403` | 🐛 fix | Fixed extra `else` block in `fetchStatus()` causing JS syntax error |
+| 3 | `103f944` | 🐛 fix | Image API changed to async task mode to avoid Cloudflare 524 timeouts |
+| 4 | `ee141de` | 🧹 chore | Cleaned up accidentally committed files during local testing |
+| 5 | `83e61ff` | 🧹 chore | Added `join-keys.json` to `.gitignore` (runtime data shouldn't be tracked) |
+| 6 | `899f27e` | 🐛 fix | Mobile/iPad sidebar fix (backdrop + body scroll lock + `100dvh`) |
+| 7 | `5aef430` | 🐛 fix | Mobile drawer moves completely off-screen on close (`right: -100vw`) |
+| 8 | `02a731e` | ✨ feat | Added join key-level expiration + concurrency limit support |
 
 ---
 
-## 潜在风险评估
+## Detailed Explanation
 
-| 风险点 | 等级 | 说明 |
-|--------|------|------|
-| 异步任务内存泄漏 | 🟡 低 | `_bg_tasks` 在任务完成并被 poll 消费后会清理；但如果前端从未 poll（如用户关闭页面），任务对象会残留。当前风险极低（生图频率低），后续可加定期清理。 |
-| `join-keys.json` 历史泄露 | 🟢 已解决 | 已加入 `.gitignore`，但如果之前有 commit 包含此文件，历史中仍存在。建议确认远端历史是否干净。 |
-| 前端 `fetchStatus` 修复 | 🟢 已验证 | 修复后的 `try/catch` 结构完整，本地运行正常。 |
-| 移动端 drawer `position:fixed` | 🟢 低 | iOS Safari 下 `position:fixed` + `100dvh` 的组合偶有兼容问题，但已是业界最佳实践。 |
+### 1. Fixed CDN Caching 404 (`878793d`)
 
-**结论：无新增 bug 风险，可以安全推送。**
+**Issue**: All responses (including 404s) under the `/static/` path were set with a 1-year cache header. Cloudflare cached the `phaser.js` 404 response for up to 2.7 days, rendering `office.hyacinth.im` completely unable to load.
+
+**Fix**:
+- `add_no_cache_headers` only sets long cache for 2xx responses, setting non-2xx responses to no-cache
+- Added a `?v={{VERSION_TIMESTAMP}}` cache-busting param to the `phaser.js` `<script>` tag
+
+### 2. Fixed fetchStatus JS Syntax Error (`cc22403`)
+
+**Issue**: In the `fetchStatus()` function, there was an isolated `} else { ... }` block between `try/catch`, breaking the JS syntax structure and causing the browser to report `Missing catch or finally after try`, freezing the whole page during loading.
+
+**Fix**: Removed the extra `else` block (the typewriter logic inside was already covered by preceding `if/else` branches).
+
+> ⚠️ This bug was what PR #49, #51, and #52 were simultaneously fixing on GitHub; those three PRs can now be closed.
+
+### 3. Async Image Generation API (`103f944`)
+
+**Issue**: `POST /assets/generate-rpg-background` was synchronous, and generation typically takes 30~120 seconds. Cloudflare's proxy timeout limit is 100s (HTTP 524), causing public users to frequently hit timeouts.
+
+**Fix**:
+- Backend: Split into `_bg_generate_worker` (background thread) + `POST /assets/generate-rpg-background` (returns `task_id`) + `GET /assets/generate-rpg-background/poll` (polls result)
+- Frontend: Added `_startAndPollGeneration()` function to poll every 3 seconds after submission, showing real-time exact progress
+- Extracted `_handleGenError()` for unified error handling (DRY optimization)
+- Re-entrancy protection: Will directly return existing `task_id` if a generation task is already running
+
+### 4-5. Cleanup and gitignore (`ee141de` + `83e61ff`)
+
+- Cleaned up accidentally committed files during local testing
+- Added `join-keys.json` to `.gitignore` (Contains secret data, should not be tracked)
+
+### 6-7. Mobile Sidebar Fixes (`899f27e` + `5aef430`)
+
+**Issue**: On Mobile/iPad, when opening the asset sidebar, the page behind it could still be scrolled; when closing the sidebar, the drawer only offset by -320px, remaining visible on wide-screen mobile devices.
+
+**Fix**:
+- Added `#asset-drawer-backdrop` mask layer, clicking closes the drawer
+- When opening drawer, added `drawer-open` class to `body` (`overflow:hidden; position:fixed; touch-action:none`)
+- When closing, restores `scrollY` position (avoids jumping to top)
+- Drawer closed state changed to `right: -100vw` (Completely moves out of viewport)
+- Utilized `100dvh` to adapt to mobile dynamic viewports
+- Added `overscroll-behavior: contain` to prevent scroll chaining inside the drawer
+
+### 8. Join Key-level Expiration (`02a731e`)
+
+**New Feature**:
+- Each key in `join-keys.json` now supports the `expiresAt` field (ISO 8601 timestamp)
+- Both `join-agent` and `agent-push` endpoints check if the key is expired before execution
+- Returns friendly message on expiration: "This join key has expired, the event has ended 🎉"
+- Supports `maxConcurrent` field to control concurrent online numbers for the same key
 
 ---
 
-## 文件变更统计
+## Potential Risk Assessment
+
+| Risk Point | Level | Explanation |
+|------------|-------|-------------|
+| Async Task Memory Leak | 🟡 Low | `_bg_tasks` cleans up after task completes and is consumed by poll; but if the frontend never polls (e.g. user closes page), the task object remains. The current risk is extremely low (infrequent image generation), periodic cleanup can be added later. |
+| `join-keys.json` history leak | 🟢 Resolved | Added to `.gitignore`, but if previous commits included this file, it exists in history. Advisable to confirm if remote history is clean. |
+| Frontend `fetchStatus` fix | 🟢 Verified | The `try/catch` structure is complete after the fix, runs normally locally. |
+| Mobile drawer `position:fixed` | 🟢 Low | `position:fixed` + `100dvh` combination occasionally has compatibility issues on iOS Safari, but it is currently industry best practice. |
+
+**Conclusion: No newly introduced bug risks, safe to push.**
+
+---
+
+## File Change Stats
 
 ```
 .gitignore                    |   1 +
@@ -96,5 +96,5 @@ frontend/index.html           | 162 ++++++++++++++++--------
 frontend/join-office-skill.md | 102 +++++++++------
 frontend/office-agent-push.py | 286 ++++++++++++++++++++++++++++++++++++++++++
 office-agent-push.py          |   2 +-
-共 6 个文件，+589 行，-130 行
+Total 6 files, +589 lines, -130 lines
 ```
