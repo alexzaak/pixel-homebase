@@ -61,8 +61,8 @@ For users on Fedora or those preferring containers, you can deploy using Podman 
 
 ```bash
 # 1) Clone the repository
-git clone https://github.com/ringhyacinth/Star-Office-UI.git
-cd Star-Office-UI
+git clone https://github.com/alexzaak/pixel-homebase.git
+cd pixel-homebase
 
 # 2) Prepare the state file (First time)
 cp state.sample.json state.json
