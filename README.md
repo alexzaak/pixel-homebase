@@ -57,6 +57,8 @@ python3 set_state.py idle "Standing by"
 
 For users on Fedora or those preferring containers, you can deploy using Podman (or Docker).
 
+> **Fedora prerequisite:** `sudo dnf install podman-compose`
+
 ```bash
 # 1) Clone the repository
 git clone https://github.com/alexzaak/pixel-homebase.git
@@ -66,7 +68,7 @@ cd pixel-homebase
 cp state.sample.json state.json
 
 # 3) Start the container
-podman compose up -d
+podman-compose up -d
 # OR with Docker: docker compose up -d
 ```
 
