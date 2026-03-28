@@ -1,0 +1,13 @@
+services:
+  star-office:
+    build: .
+    image: star-office-ui:local
+    container_name: star-office
+    restart: unless-stopped
+    ports:
+      - "19000:19000"
+    volumes:
+      # Use :Z for SELinux compatibility on Fedora with Podman
+      - ./:/app:Z
+    environment:
+      - TZ=UTC

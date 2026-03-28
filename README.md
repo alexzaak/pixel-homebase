@@ -55,6 +55,25 @@ python3 set_state.py error "Issue found, investigating"
 python3 set_state.py idle "Standing by"
 ```
 
+### Method 3: Container Deployment (Podman / Docker)
+
+For users on Fedora or those preferring containers, you can deploy using Podman (or Docker).
+
+```bash
+# 1) Clone the repository
+git clone https://github.com/ringhyacinth/Star-Office-UI.git
+cd Star-Office-UI
+
+# 2) Prepare the state file (First time)
+cp state.sample.json state.json
+
+# 3) Start the container
+podman compose up -d
+# OR with Docker: docker compose up -d
+```
+
+Open **http://127.0.0.1:19000** to view your office. The directory is mounted with the `:Z` flag to ensure compatibility with SELinux on Fedora.
+
 ![Star Office UI Preview](docs/screenshots/readme-cover-1.jpg)
 
 ---
